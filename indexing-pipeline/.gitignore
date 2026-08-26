@@ -1,0 +1,13 @@
+# vector store ที่ generate ขึ้นมาใหม่ได้เสมอ ไม่ต้อง commit
+chroma_db/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# HuggingFace model cache (ถ้าตั้ง HF_HOME มาไว้ในโปรเจกต์)
+.cache/

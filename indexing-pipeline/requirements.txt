@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------------
+# Indexing pipeline สำหรับแชทบอท RAG รีสอร์ท (ภาษาไทย)
+# Python 3.10+ (ทดสอบบน 3.11.9 / Windows 11)
+#
+# ติดตั้ง:  pip install -r requirements.txt
+# ---------------------------------------------------------------------------
+
+# --- Text splitting ---
+# แพ็กเกจย่อยของ LangChain ที่มีเฉพาะ text splitter ไม่ต้องลง langchain ทั้งก้อน
+# (RecursiveCharacterTextSplitter อยู่ในนี้) ทำให้ dependency เบากว่ามาก
+langchain-text-splitters==0.3.0
+
+# --- Embedding ---
+# multilingual-e5-base รันโลคัลผ่าน sentence-transformers ไม่ต้องเรียก API ภายนอก
+sentence-transformers==3.1.1
+transformers==4.57.6
+torch>=2.2.0            # ไม่ pin แน่นเพราะแต่ละเครื่อง (CPU/CUDA) ต้องการ build ต่างกัน
+
+# --- Vector store ---
+chromadb==0.5.5
+
+# --- ข้อจำกัดสำคัญ ---
+# chromadb 0.5.x ยังไม่รองรับ numpy 2.x ต้องตรึงไว้ที่ 1.26.x
+numpy==1.26.4
+
+# --- Testing ---
+pytest==8.3.3
