@@ -19,15 +19,22 @@ from src.indexer import (
     index_directory,
     search,
 )
+from tests.conftest import FIXTURES_DIR
 
 pytestmark = pytest.mark.slow
 
 
 @pytest.fixture(scope="module")
 def indexed(tmp_path_factory) -> tuple[Path, object]:
-    """index เอกสารตัวอย่างลง ChromaDB ในโฟลเดอร์ชั่วคราว (ทำครั้งเดียวต่อ module)"""
+    """index คลังเอกสารทดสอบลง ChromaDB ในโฟลเดอร์ชั่วคราว (ทำครั้งเดียวต่อ module)
+
+    ใช้ ``FIXTURES_DIR`` ไม่ใช่ ``data/`` จริง เพื่อให้เทสต์ไม่พังเมื่อลูกค้า
+    เติมข้อมูลจริงลง data/
+    """
     persist_dir = tmp_path_factory.mktemp("chroma_test")
-    stats = index_directory(persist_dir=persist_dir, reset=True, show_progress=False)
+    stats = index_directory(
+        data_dir=FIXTURES_DIR, persist_dir=persist_dir, reset=True, show_progress=False
+    )
     collection = get_collection(get_client(persist_dir))
     return persist_dir, (stats, collection)
 
@@ -66,7 +73,9 @@ def test_รัน_index_ซ้ำแล้วจำนวนระเบีย�
     persist_dir, (stats, collection) = indexed
     before = collection.count()
 
-    index_directory(persist_dir=persist_dir, reset=False, show_progress=False)
+    index_directory(
+        data_dir=FIXTURES_DIR, persist_dir=persist_dir, reset=False, show_progress=False
+    )
 
     after = get_collection(get_client(persist_dir)).count()
     assert after == before, f"รันซ้ำแล้วระเบียนเปลี่ยนจาก {before} เป็น {after}"

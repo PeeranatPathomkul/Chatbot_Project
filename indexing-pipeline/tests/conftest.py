@@ -14,10 +14,18 @@ from src import config  # noqa: E402
 from src.chunking import SourceDocument  # noqa: E402
 
 
+#: คลังเอกสารคงที่สำหรับเทสต์ — เนื้อหาสมมติของ "บ้านสวนรีสอร์ท เชียงใหม่"
+#:
+#: เทสต์ต้องไม่อ่านจาก ``data/`` จริง เพราะไฟล์ในนั้นเป็นโครงที่รอเติมข้อมูลของลูกค้า
+#: และจะถูกแก้อยู่เรื่อย ๆ ถ้าเทสต์ผูกกับเนื้อหาในนั้น การเติมข้อมูลจริงจะทำให้
+#: เทสต์พังทันทีทั้งที่ pipeline ไม่ได้เสียอะไรเลย
+FIXTURES_DIR: Path = Path(__file__).resolve().parent / "fixtures"
+
+
 @pytest.fixture(scope="session")
 def data_dir() -> Path:
-    """โฟลเดอร์เอกสารตัวอย่างภาษาไทยที่มากับโปรเจกต์"""
-    return config.DATA_DIR
+    """คลังเอกสารตัวอย่างภาษาไทยที่ใช้ทดสอบ (คงที่ ไม่เกี่ยวกับ data/ ของจริง)"""
+    return FIXTURES_DIR
 
 
 @pytest.fixture
