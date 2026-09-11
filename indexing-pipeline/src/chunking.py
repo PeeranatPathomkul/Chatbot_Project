@@ -102,12 +102,16 @@ class Chunk:
     chunk_index: int = 0
     """ลำดับที่ของ chunk ภายในไฟล์ (เริ่มจาก 0)"""
 
+    language: str = config.DEFAULT_LANGUAGE
+    """ภาษาของ chunk ("th" / "en") ใช้กรองตอน retrieval ให้ตอบตรงภาษาที่ลูกค้าถาม"""
+
     def to_metadata(self) -> dict[str, str | int]:
         """แปลงเป็น metadata dict สำหรับ ChromaDB (รับเฉพาะ str/int/float/bool)"""
         return {
             "chunk_id": self.chunk_id,
             "source": self.source,
             "category": self.category,
+            "language": self.language,
             "heading": self.heading,
             "chunk_index": self.chunk_index,
             "char_count": len(self.text),
@@ -122,9 +126,28 @@ class SourceDocument:
     body: str
     front_matter: dict[str, str] = field(default_factory=dict)
 
+    base_dir: Path | None = None
+    """โฟลเดอร์ data ที่ใช้เป็นฐานคำนวณ ``source`` แบบ relative
+
+    จำเป็นเมื่อเอกสารถูกแยกเป็นโฟลเดอร์ย่อย (data/th/faq.md กับ data/en/faq.md)
+    เพราะถ้าใช้แค่ชื่อไฟล์ ทั้งสองจะได้ source เป็น "faq.md" เหมือนกันจน
+    chunk_id ชนกันและทับกันเองใน vector store
+    """
+
     @property
     def source(self) -> str:
+        """path ของไฟล์เทียบกับโฟลเดอร์ data เช่น ``th/faq.md``"""
+        if self.base_dir is not None:
+            try:
+                return self.path.relative_to(self.base_dir).as_posix()
+            except ValueError:
+                pass
         return self.path.name
+
+    @property
+    def slug(self) -> str:
+        """ชื่อย่อที่ใช้ตั้ง chunk_id — ไม่ซ้ำกันข้ามโฟลเดอร์ เช่น ``th-faq``"""
+        return self.source.rsplit(".", 1)[0].replace("/", "-")
 
     @property
     def category(self) -> str:
@@ -132,6 +155,15 @@ class SourceDocument:
         if category := self.front_matter.get("category"):
             return category
         return config.CATEGORY_BY_FILENAME.get(self.path.stem, config.DEFAULT_CATEGORY)
+
+    @property
+    def language(self) -> str:
+        """หาภาษาตามลำดับ: front matter -> ชื่อโฟลเดอร์ที่ไฟล์อยู่ -> ค่าเริ่มต้น"""
+        if language := self.front_matter.get("language"):
+            return language.lower()
+        if self.path.parent.name.lower() in config.SUPPORTED_LANGUAGES:
+            return self.path.parent.name.lower()
+        return config.DEFAULT_LANGUAGE
 
 
 # --------------------------------------------------------------------------
@@ -165,15 +197,24 @@ def parse_front_matter(raw: str) -> tuple[dict[str, str], str]:
     return meta, raw[match.end():]
 
 
-def load_document(path: Path) -> SourceDocument:
-    """อ่านไฟล์เดียวเป็น SourceDocument (บังคับอ่านเป็น UTF-8 เพื่อไม่ให้ภาษาไทยเพี้ยน)"""
+def load_document(path: Path, base_dir: Path | None = None) -> SourceDocument:
+    """อ่านไฟล์เดียวเป็น SourceDocument (บังคับอ่านเป็น UTF-8 เพื่อไม่ให้ภาษาไทยเพี้ยน)
+
+    Args:
+        path: ไฟล์ที่จะอ่าน
+        base_dir: โฟลเดอร์ data ที่ใช้คำนวณ ``source`` แบบ relative
+            ถ้าไม่ระบุจะใช้แค่ชื่อไฟล์
+    """
     raw = path.read_text(encoding="utf-8")
     front_matter, body = parse_front_matter(raw)
-    return SourceDocument(path=path, body=body, front_matter=front_matter)
+    return SourceDocument(path=path, body=body, front_matter=front_matter, base_dir=base_dir)
 
 
 def load_documents(data_dir: Path | None = None) -> list[SourceDocument]:
-    """อ่านไฟล์ทั้งหมดในโฟลเดอร์ data (เรียงตามชื่อไฟล์เพื่อให้ผลลัพธ์คงที่ทุกครั้ง)"""
+    """อ่านไฟล์ทั้งหมดในโฟลเดอร์ data รวมถึงโฟลเดอร์ย่อยตามภาษา (th/, en/)
+
+    เรียงตาม path เพื่อให้ผลลัพธ์คงที่ทุกครั้ง
+    """
     directory = Path(data_dir) if data_dir else config.DATA_DIR
     if not directory.is_dir():
         raise FileNotFoundError(f"ไม่พบโฟลเดอร์ข้อมูล: {directory}")
@@ -183,7 +224,7 @@ def load_documents(data_dir: Path | None = None) -> list[SourceDocument]:
         for p in directory.rglob("*")
         if p.is_file() and p.suffix.lower() in config.SUPPORTED_EXTENSIONS
     )
-    return [load_document(p) for p in paths]
+    return [load_document(p, base_dir=directory) for p in paths]
 
 
 # --------------------------------------------------------------------------
@@ -208,6 +249,19 @@ def create_splitter(
         keep_separator=True,  # เก็บตัวคั่นไว้ ไม่ให้ประโยคติดกันจนอ่านไม่รู้เรื่อง
         length_function=len,  # นับเป็นตัวอักษร (ดูเหตุผลใน config.py)
         is_separator_regex=False,
+    )
+
+
+def strip_editor_notes(body: str) -> str:
+    """ตัดบรรทัด blockquote (``>``) ซึ่งใช้เป็น "หมายเหตุสำหรับผู้ดูแลข้อมูล" ออก
+
+    เอกสารใน ``data/`` มีคำอธิบายวิธีกรอกข้อมูลแทรกไว้ให้คนที่มาแก้ไฟล์อ่าน
+    ข้อความพวกนี้ต้องไม่ถูก index เพราะมันไม่ใช่ความรู้ที่จะตอบลูกค้า
+    และแย่กว่านั้นคือมันมักมีตัวอย่างคำถามของลูกค้าอยู่ด้วย ("เอาหมามาได้ป่ะ")
+    ทำให้ถูกค้นเจอเป็นอันดับต้น ๆ แล้วแชทบอทเอาโน้ตภายในไปตอบลูกค้าแทนคำตอบจริง
+    """
+    return "\n".join(
+        line for line in body.splitlines() if not line.lstrip().startswith(">")
     )
 
 
@@ -243,11 +297,23 @@ def split_into_sections(body: str) -> list[tuple[str, str]]:
     return sections or [("", body.strip())]
 
 
-def _build_context_header(category: str, heading: str) -> str:
-    """สร้างบรรทัดบริบทที่จะเติมไว้หัว chunk"""
-    parts = [f"หมวด: {category}"]
+#: คำที่ใช้ในบรรทัดบริบท แยกตามภาษาของเอกสาร
+_CONTEXT_LABELS: dict[str, tuple[str, str]] = {
+    "th": ("หมวด", "หัวข้อ"),
+    "en": ("Category", "Section"),
+}
+
+
+def _build_context_header(category: str, heading: str, language: str) -> str:
+    """สร้างบรรทัดบริบทที่จะเติมไว้หัว chunk
+
+    ใช้คำในภาษาเดียวกับตัวเอกสาร เพราะถ้าเอาหัวข้อภาษาไทยไปแปะหน้าเนื้อหาภาษาอังกฤษ
+    chunk นั้นจะกลายเป็นสองภาษาปนกัน ซึ่งทำให้เวกเตอร์จับใจความได้แย่ลง
+    """
+    category_label, heading_label = _CONTEXT_LABELS.get(language, _CONTEXT_LABELS["th"])
+    parts = [f"{category_label}: {category}"]
     if heading:
-        parts.append(f"หัวข้อ: {heading}")
+        parts.append(f"{heading_label}: {heading}")
     return "[" + " | ".join(parts) + "]"
 
 
@@ -264,27 +330,31 @@ def chunk_document(
     splitter = create_splitter(chunk_size, chunk_overlap)
     chunks: list[Chunk] = []
 
-    for heading, section_text in split_into_sections(document.body):
+    for heading, section_text in split_into_sections(strip_editor_notes(document.body)):
         for piece in splitter.split_text(section_text):
             piece = piece.strip()
             if len(piece) < config.MIN_CHUNK_CHARS:
                 continue
 
             if config.PREPEND_HEADING_CONTEXT:
-                text = f"{_build_context_header(document.category, heading)}\n{piece}"
+                header = _build_context_header(document.category, heading, document.language)
+                text = f"{header}\n{piece}"
             else:
                 text = piece
 
             index = len(chunks)
             chunks.append(
                 Chunk(
-                    # deterministic: ชื่อไฟล์ + ลำดับที่ -> รันซ้ำได้ ID เดิมเสมอ
-                    chunk_id=f"{document.path.stem}::{index:04d}",
+                    # deterministic: path ของไฟล์ + ลำดับที่ -> รันซ้ำได้ ID เดิมเสมอ
+                    # ใช้ slug ที่มีโฟลเดอร์ภาษาติดมาด้วย (th-faq) ไม่ใช่แค่ชื่อไฟล์ (faq)
+                    # มิฉะนั้น data/th/faq.md กับ data/en/faq.md จะได้ ID ชนกันแล้วทับกันเอง
+                    chunk_id=f"{document.slug}::{index:04d}",
                     text=text,
                     source=document.source,
                     category=document.category,
                     heading=heading,
                     chunk_index=index,
+                    language=document.language,
                 )
             )
 
@@ -312,12 +382,42 @@ def chunk_directory(
     return chunk_documents(load_documents(data_dir), chunk_size, chunk_overlap)
 
 
+#: ขึ้นต้นของบรรทัดบริบท แยกตามภาษา (ต้องตรงกับ _CONTEXT_LABELS)
+_CONTEXT_HEADER_PREFIXES: tuple[str, ...] = tuple(
+    f"[{category_label}:" for category_label, _ in _CONTEXT_LABELS.values()
+)
+
+
 def strip_context_header(text: str) -> str:
     """ตัดบรรทัดบริบท "[หมวด: ... | หัวข้อ: ...]" ออก เหลือเฉพาะเนื้อหาจริง
 
     ใช้ตอนแสดงผลให้คนอ่าน เพราะบรรทัดบริบทมีไว้ช่วย embedding ไม่ใช่ให้คนอ่าน
     """
     lines = text.splitlines()
-    if lines and lines[0].startswith("[หมวด:") and lines[0].endswith("]"):
+    if lines and lines[0].startswith(_CONTEXT_HEADER_PREFIXES) and lines[0].endswith("]"):
         return "\n".join(lines[1:]).strip()
     return text.strip()
+
+
+# --------------------------------------------------------------------------
+# ตรวจ placeholder ในเอกสารร่าง
+# --------------------------------------------------------------------------
+
+_PLACEHOLDER_RE = re.compile(config.PLACEHOLDER_PATTERN)
+
+
+def find_placeholders(chunks: list[Chunk]) -> list[tuple[str, str]]:
+    """หา chunk ที่ยังมี placeholder ``<<...>>`` ค้างอยู่
+
+    เอกสารใน ``data/`` เป็นโครงที่รอเติมข้อมูลจริง ถ้า index ทั้งที่ยังมี placeholder
+    แชทบอทจะตอบลูกค้าด้วยข้อความอย่าง "<<รอเติม: ราคา>>" อย่างมั่นใจ
+    ซึ่งแย่กว่าการตอบว่าไม่ทราบมาก
+
+    Returns:
+        list ของ (chunk_id, placeholder ที่เจอ) — หนึ่งรายการต่อหนึ่ง placeholder
+    """
+    found: list[tuple[str, str]] = []
+    for chunk in chunks:
+        for match in _PLACEHOLDER_RE.findall(chunk.text):
+            found.append((chunk.chunk_id, match))
+    return found

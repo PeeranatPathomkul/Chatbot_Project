@@ -40,7 +40,13 @@ from chromadb.api.models.Collection import Collection
 from chromadb.config import Settings as ChromaSettings
 
 from src import config
-from src.chunking import Chunk, chunk_document, find_broken_boundaries, load_documents
+from src.chunking import (
+    Chunk,
+    chunk_document,
+    find_broken_boundaries,
+    find_placeholders,
+    load_documents,
+)
 from src.embedding import ThaiEmbedder, get_embedder
 from src.logging_utils import format_duration, get_logger, setup_logging
 
@@ -62,6 +68,7 @@ class IndexStats:
     elapsed_seconds: float = 0.0
     chunks_per_file: dict[str, int] = field(default_factory=dict)
     broken_boundaries: list[tuple[str, str]] = field(default_factory=list)
+    placeholders: list[tuple[str, str]] = field(default_factory=list)
 
     def summary_lines(self) -> list[str]:
         """สรุปผลเป็นบรรทัดข้อความสำหรับพิมพ์ท้ายการทำงาน"""
@@ -77,6 +84,10 @@ class IndexStats:
                 lines.append(f"    {source:<28} {count:>3} chunk")
         if self.broken_boundaries:
             lines.append(f"เตือน: พบ chunk ที่อาจตัดกลางคำ {len(self.broken_boundaries)} จุด")
+        if self.placeholders:
+            lines.append(
+                f"เตือน: ยังมี placeholder รอเติมข้อมูลจริง {len(self.placeholders)} จุด"
+            )
         return lines
 
 
@@ -221,6 +232,7 @@ def index_directory(
         stats.chunks_per_file[document.source] = len(chunks)
         stats.chunks_created += len(chunks)
         stats.broken_boundaries.extend(find_broken_boundaries(chunks))
+        stats.placeholders.extend(find_placeholders(chunks))
 
         if not reset:
             # ลบของเก่าของไฟล์นี้ก่อน กัน chunk ที่หายไปจากเอกสารค้างอยู่ใน DB
@@ -231,8 +243,8 @@ def index_directory(
 
         index_chunks(collection, chunks, embedder, show_progress=show_progress)
         logger.info(
-            "  %-28s หมวด=%-22s -> %2d chunk",
-            document.source, document.category, len(chunks),
+            "  %-26s [%s] หมวด=%-22s -> %2d chunk",
+            document.source, document.language, document.category, len(chunks),
         )
 
     stats.elapsed_seconds = time.perf_counter() - started
@@ -246,6 +258,12 @@ def index_directory(
         for chunk_id, reason in stats.broken_boundaries[:10]:
             logger.warning("    %s : %s", chunk_id, reason)
 
+    if stats.placeholders:
+        logger.warning(
+            "เอกสารยังเป็นโครงร่าง — แชทบอทจะตอบลูกค้าด้วยข้อความ placeholder ตรง ๆ "
+            "ถ้านำไปใช้จริงตอนนี้ (ดูจุดที่ยังต้องเติมด้วย: python -m src.indexer --todo)"
+        )
+
     return stats
 
 
@@ -254,18 +272,36 @@ def index_directory(
 # --------------------------------------------------------------------------
 
 
+def _build_where(category: str | None, language: str | None) -> dict[str, Any] | None:
+    """ประกอบเงื่อนไข metadata filter ของ Chroma
+
+    Chroma รับเงื่อนไขเดียวเป็น dict ธรรมดา แต่ถ้ามีหลายเงื่อนไขต้องห่อด้วย ``$and``
+    """
+    clauses = [
+        {field: value}
+        for field, value in (("category", category), ("language", language))
+        if value
+    ]
+    if not clauses:
+        return None
+    return clauses[0] if len(clauses) == 1 else {"$and": clauses}
+
+
 def search(
     question: str,
     top_k: int | None = None,
     category: str | None = None,
+    language: str | None = None,
     collection: Collection | None = None,
 ) -> list[dict[str, Any]]:
     """ค้นหา chunk ที่ใกล้เคียงคำถามที่สุด
 
     Args:
-        question: คำถามภาษาไทย (ใส่ข้อความดิบ ไม่ต้องเติม prefix เอง)
+        question: คำถามของผู้ใช้ (ใส่ข้อความดิบ ไม่ต้องเติม prefix เอง)
         top_k: จำนวนผลลัพธ์
         category: กรองเฉพาะหมวดหมู่ที่ต้องการ เช่น "FAQ"
+        language: กรองเฉพาะภาษา เช่น "th" / "en" — ควรส่งเสมอในระบบจริง
+            เพื่อไม่ให้ลูกค้าที่ถามไทยได้ chunk ภาษาอังกฤษกลับไป
         collection: ระบุ collection เองได้ (ใช้ในเทสต์) ไม่ระบุจะเปิดตาม config
 
     Returns:
@@ -279,7 +315,7 @@ def search(
     results = collection.query(
         query_embeddings=[query_vector],
         n_results=top_k or config.DEFAULT_TOP_K,
-        where={"category": category} if category else None,
+        where=_build_where(category, language),
         include=["documents", "metadatas", "distances"],
     )
 
@@ -309,10 +345,15 @@ def collection_stats(collection: Collection | None = None) -> dict[str, Any]:
 
     by_source: dict[str, int] = {}
     by_category: dict[str, int] = {}
+    by_language: dict[str, int] = {}
     for metadata in payload.get("metadatas") or []:
-        by_source[metadata.get("source", "?")] = by_source.get(metadata.get("source", "?"), 0) + 1
-        category = metadata.get("category", "?")
-        by_category[category] = by_category.get(category, 0) + 1
+        for field_name, counter in (
+            ("source", by_source),
+            ("category", by_category),
+            ("language", by_language),
+        ):
+            value = metadata.get(field_name, "?")
+            counter[value] = counter.get(value, 0) + 1
 
     return {
         "name": collection.name,
@@ -320,6 +361,7 @@ def collection_stats(collection: Collection | None = None) -> dict[str, Any]:
         "metric": (collection.metadata or {}).get("hnsw:space", "ไม่ระบุ"),
         "by_source": by_source,
         "by_category": by_category,
+        "by_language": by_language,
     }
 
 
@@ -337,7 +379,8 @@ def _preview(data_dir: Path | None, limit: int) -> None:
         chunks = chunk_document(document)
         all_chunks.extend(chunks)
         print(f"\n{'=' * 78}")
-        print(f"ไฟล์: {document.source} | หมวด: {document.category} | {len(chunks)} chunk")
+        print(f"ไฟล์: {document.source} | ภาษา: {document.language} | "
+              f"หมวด: {document.category} | {len(chunks)} chunk")
         print("=" * 78)
         for chunk in chunks[:limit]:
             print(f"\n--- [{chunk.chunk_id}] หัวข้อ: {chunk.heading or '(ไม่มี)'} "
@@ -370,6 +413,39 @@ def _print_stats() -> None:
     print("แยกตามหมวดหมู่:")
     for category, count in sorted(stats["by_category"].items()):
         print(f"    {category:<28} {count:>3}")
+    print("แยกตามภาษา:")
+    for language, count in sorted(stats["by_language"].items()):
+        print(f"    {language:<28} {count:>3}")
+
+
+def _print_todo(data_dir: Path | None) -> int:
+    """แสดงรายการ placeholder ที่ยังรอเติมข้อมูลจริง แยกตามไฟล์
+
+    คืนจำนวน placeholder ทั้งหมด (0 = เอกสารพร้อมใช้งานจริงแล้ว)
+    """
+    documents = load_documents(data_dir or config.DATA_DIR)
+
+    total = 0
+    for document in documents:
+        placeholders = find_placeholders(chunk_document(document))
+        if not placeholders:
+            print(f"  [ครบแล้ว] {document.source}")
+            continue
+
+        total += len(placeholders)
+        print(f"\n  [รอเติม {len(placeholders):>2} จุด] {document.source}")
+        # ตัดซ้ำแต่คงลำดับเดิมไว้ เพราะ placeholder เดียวกันโผล่ได้หลาย chunk จาก overlap
+        for placeholder in dict.fromkeys(text for _, text in placeholders):
+            print(f"        {placeholder}")
+
+    print(f"\n{'-' * 78}")
+    if total:
+        print(f"ยังต้องเติมข้อมูลจริงอีก {total} จุด จาก {len(documents)} ไฟล์")
+        print("เติมโดยแก้ไฟล์ใน data/ แทนที่ข้อความ <<...>> ด้วยข้อมูลจริง แล้วรัน:")
+        print("    python -m src.indexer --reset")
+    else:
+        print(f"เอกสารทั้ง {len(documents)} ไฟล์เติมข้อมูลครบแล้ว พร้อมใช้งานจริง")
+    return total
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -385,6 +461,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="แสดงตัวอย่าง chunk อย่างเดียว ไม่เขียนลง ChromaDB")
     parser.add_argument("--stats", action="store_true",
                         help="แสดงสถิติของ collection ที่ index ไว้แล้ว")
+    parser.add_argument("--todo", action="store_true",
+                        help="แสดงรายการ placeholder <<...>> ที่ยังรอเติมข้อมูลจริง")
+    parser.add_argument("--strict", action="store_true",
+                        help="ถือว่า placeholder ที่ค้างอยู่เป็นข้อผิดพลาด (สำหรับใช้ใน CI)")
     parser.add_argument("--limit", type=int, default=3,
                         help="จำนวน chunk ต่อไฟล์ที่จะแสดงในโหมด --preview (ค่าเริ่มต้น 3)")
     parser.add_argument("--no-progress", action="store_true",
@@ -396,6 +476,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     setup_logging()
 
+    if args.todo:
+        return 1 if (_print_todo(args.data_dir) and args.strict) else 0
+
     if args.preview:
         _preview(args.data_dir, args.limit)
         return 0
@@ -405,7 +488,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        index_directory(
+        stats = index_directory(
             data_dir=args.data_dir,
             reset=args.reset,
             show_progress=not args.no_progress,
@@ -414,7 +497,16 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("%s", error)
         return 1
 
+    if stats.placeholders and args.strict:
+        logger.error(
+            "--strict: ยังมี placeholder ค้างอยู่ %d จุด ถือว่าไม่ผ่าน",
+            len(stats.placeholders),
+        )
+        return 1
+
     print("\nเสร็จสิ้น — ลองทดสอบค้นหาด้วย: python -m scripts.query_demo")
+    if stats.placeholders:
+        print("ดูจุดที่ยังต้องเติมข้อมูลจริง: python -m src.indexer --todo")
     return 0
 
 
