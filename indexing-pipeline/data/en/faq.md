@@ -47,6 +47,9 @@ A: Call 081-598-1199 or message Facebook: Poonsuk Resort Sadao. Your booking is 
 Q: How much is the deposit and how do I pay it?
 A: The deposit is 200 THB, transferred to PromptPay number 081-599-3128. The balance is paid on the day of check-in.
 
+Q: Why is the PromptPay number different from the resort's phone number?
+A: The PromptPay number for transfers is 081-599-3128, which differs from the contact number 081-598-1199. Both numbers belong to the resort — one is the line for enquiries and the other is the number linked to the payment account. If you are unsure, call 081-598-1199 to confirm before transferring.
+
 Q: Can I pay in cash or by credit card?
 A: No. The resort accepts bank transfer only — no cash and no credit cards.
 

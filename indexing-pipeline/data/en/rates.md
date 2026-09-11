@@ -23,6 +23,8 @@ Extra bed: 200 THB per bed per night, available in any room.
 A booking is only confirmed once the room deposit has been paid.
 Deposit: 200 THB.
 Transfer to PromptPay number 081-599-3128.
+Note: the PromptPay number 081-599-3128 differs from the contact number 081-598-1199,
+but both belong to the resort. If unsure, call 081-598-1199 to confirm before transferring.
 The balance is paid on the day of check-in.
 
 The resort accepts bank transfer only — no cash and no credit cards.
