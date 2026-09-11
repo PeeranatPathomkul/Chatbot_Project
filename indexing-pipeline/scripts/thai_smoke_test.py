@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import statistics
 import sys
+from pathlib import Path
 
 from src import config
 from src.chunking import (
@@ -46,6 +47,14 @@ TEST_CASES: list[tuple[str, set[str]]] = [
 #: เกณฑ์ขั้นต่ำของ similarity ที่ถือว่า "ดึงมาได้จริง" ไม่ใช่สุ่มมั่ว
 MIN_ACCEPTABLE_SIMILARITY = 0.80
 
+#: คลังเอกสารที่ใช้ทดสอบ — เนื้อหาสมมติที่คงที่ ไม่ใช่ ``data/`` ของจริง
+#: เพราะ data/ เป็นโครงที่รอเติมข้อมูลของลูกค้า ถ้าทดสอบกับมันผลจะเปลี่ยนไปเรื่อย ๆ
+#: ตามที่ลูกค้าแก้ไฟล์ ทำให้ใช้ยืนยันว่า pipeline ยังดีอยู่ไม่ได้
+FIXTURES_DIR: Path = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
+
+#: collection แยกต่างหากสำหรับทดสอบ จะได้ไม่ไปทับ collection ที่ใช้งานจริง
+SMOKE_TEST_COLLECTION = "smoke_test"
+
 SEPARATOR = "=" * 88
 
 
@@ -58,11 +67,11 @@ def _header(title: str) -> None:
 # --------------------------------------------------------------------------
 
 
-def check_chunking(show_samples: int = 2) -> tuple[bool, list]:
+def check_chunking(data_dir: Path, show_samples: int = 2) -> tuple[bool, list]:
     """ตรวจการแบ่ง chunk และแสดงตัวอย่างจริงให้ประเมินด้วยตา"""
     _header("[1] Chunking — แบ่งเอกสารภาษาไทย")
 
-    documents = load_documents()
+    documents = load_documents(data_dir)
     all_chunks = []
     print(f"chunk_size = {config.CHUNK_SIZE} ตัวอักษร | "
           f"chunk_overlap = {config.CHUNK_OVERLAP} ตัวอักษร\n")
@@ -248,7 +257,7 @@ def _preview_of(hit: dict, width: int = 150) -> str:
     return text[:width] + ("..." if len(text) > width else "")
 
 
-def check_retrieval(top_k: int = 3) -> bool:
+def check_retrieval(collection, top_k: int = 3) -> bool:
     """ยิงคำถามไทยจริงเข้า ChromaDB แล้วตรวจว่าดึง chunk ถูกไฟล์
 
     เกณฑ์ตัดสิน: ไฟล์ที่คาดหวังต้องปรากฏใน top-k (ไม่ใช่บังคับว่าต้องเป็นอันดับ 1)
@@ -257,7 +266,6 @@ def check_retrieval(top_k: int = 3) -> bool:
     """
     _header("[5] Retrieval — query ภาษาไทยจริงผ่าน ChromaDB (cosine)")
 
-    collection = get_collection()
     print(f"collection '{collection.name}' | {collection.count()} ระเบียน | "
           f"metric = {(collection.metadata or {}).get('hnsw:space')}")
     print(f"เกณฑ์ผ่าน: ไฟล์ที่คาดหวังติดใน top-{top_k} และคะแนนอันดับ 1 >= "
@@ -300,6 +308,10 @@ def check_retrieval(top_k: int = 3) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ทดสอบ indexing pipeline ภาษาไทยแบบ end-to-end")
+    parser.add_argument("--data-dir", type=Path, default=FIXTURES_DIR,
+                        help="คลังเอกสารที่ใช้ทดสอบ (ค่าเริ่มต้น: tests/fixtures)")
+    parser.add_argument("--collection", default=SMOKE_TEST_COLLECTION,
+                        help="ชื่อ collection ที่ใช้ทดสอบ (แยกจาก collection ใช้งานจริง)")
     parser.add_argument("--reindex", action="store_true", help="สั่ง index ใหม่ทั้งหมดก่อนตรวจ")
     parser.add_argument("--top-k", type=int, default=3, help="จำนวนผลลัพธ์ต่อคำถาม")
     parser.add_argument("--samples", type=int, default=2,
@@ -308,16 +320,23 @@ def main(argv: list[str] | None = None) -> int:
 
     setup_logging()
 
-    if args.reindex or get_collection().count() == 0:
-        _header("[0] Indexing — สร้าง vector store ใหม่")
-        index_directory(reset=args.reindex, show_progress=False)
+    collection = get_collection(name=args.collection)
+    if args.reindex or collection.count() == 0:
+        _header("[0] Indexing — สร้าง vector store สำหรับทดสอบ")
+        index_directory(
+            data_dir=args.data_dir,
+            collection_name=args.collection,
+            reset=args.reindex,
+            show_progress=False,
+        )
+        collection = get_collection(name=args.collection)
 
     results: dict[str, bool] = {}
-    results["metadata ครบถ้วน"], all_chunks = check_chunking(args.samples)
+    results["metadata ครบถ้วน"], all_chunks = check_chunking(args.data_dir, args.samples)
     results["ไม่ตัดกลางคำไทย"] = check_thai_boundaries(all_chunks)
     results["ความยาวไม่เกินโมเดล"] = check_token_length(all_chunks)
     results["e5 prefix ถูกต้อง"] = check_e5_prefix(all_chunks)
-    results["retrieval แม่นยำ"] = check_retrieval(args.top_k)
+    results["retrieval แม่นยำ"] = check_retrieval(collection, args.top_k)
 
     _header("สรุปผลการทดสอบ")
     for name, passed in results.items():

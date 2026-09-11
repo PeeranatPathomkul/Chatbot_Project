@@ -75,7 +75,7 @@ def print_hits(question: str, hits: list[dict[str, Any]], preview_chars: int = 2
         )
         print(
             f"      ไฟล์: {metadata.get('source')} | หมวด: {metadata.get('category')} "
-            f"| หัวข้อ: {metadata.get('heading') or '-'} | id: {hit['chunk_id']}"
+            f"| ภาษา: {metadata.get('language')} | หัวข้อ: {metadata.get('heading') or '-'}"
         )
         # ตัดบรรทัดบริบทออกก่อนแสดง เพราะมันมีไว้ช่วย embedding ไม่ใช่ให้คนอ่าน
         # (ข้อมูลในบรรทัดนั้นถูกพิมพ์เป็น "หมวด/หัวข้อ" ให้แล้วบรรทัดบน)
@@ -86,17 +86,20 @@ def print_hits(question: str, hits: list[dict[str, Any]], preview_chars: int = 2
             print(f"      {line}")
 
 
-def run_questions(questions: list[str], top_k: int, category: str | None) -> None:
+def run_questions(questions: list[str], top_k: int, category: str | None,
+                  language: str | None) -> None:
     collection = get_collection()
     if collection.count() == 0:
         print("collection ว่างเปล่า — กรุณารัน `python -m src.indexer` ก่อน")
         return
     for question in questions:
-        print_hits(question, search(question, top_k=top_k, category=category, collection=collection))
+        print_hits(question, search(question, top_k=top_k, category=category, language=language,
+                                collection=collection))
     print()
 
 
-def run_interactive(top_k: int, category: str | None) -> None:
+def run_interactive(top_k: int, category: str | None,
+                    language: str | None) -> None:
     collection = get_collection()
     print("พิมพ์คำถามภาษาไทยแล้วกด Enter (พิมพ์ 'exit' หรือกด Ctrl+C เพื่อออก)")
     while True:
@@ -109,7 +112,8 @@ def run_interactive(top_k: int, category: str | None) -> None:
             continue
         if question.lower() in {"exit", "quit", "q"}:
             return
-        print_hits(question, search(question, top_k=top_k, category=category, collection=collection))
+        print_hits(question, search(question, top_k=top_k, category=category, language=language,
+                                collection=collection))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -119,17 +123,19 @@ def main(argv: list[str] | None = None) -> int:
                         help=f"จำนวนผลลัพธ์ต่อคำถาม (ค่าเริ่มต้น {config.DEFAULT_TOP_K})")
     parser.add_argument("--category", default=None,
                         help="กรองเฉพาะหมวดหมู่ เช่น FAQ, ห้องพัก, นโยบาย, ราคา")
+    parser.add_argument("--language", default=None, choices=config.SUPPORTED_LANGUAGES,
+                        help="กรองเฉพาะภาษา (th / en) — ในระบบจริงควรส่งเสมอ")
     parser.add_argument("--interactive", action="store_true", help="โหมดถามตอบต่อเนื่อง")
     args = parser.parse_args(argv)
 
     setup_logging()
 
     if args.interactive:
-        run_interactive(args.top_k, args.category)
+        run_interactive(args.top_k, args.category, args.language)
         return 0
 
     questions = [" ".join(args.question)] if args.question else SAMPLE_QUESTIONS
-    run_questions(questions, args.top_k, args.category)
+    run_questions(questions, args.top_k, args.category, args.language)
     return 0
 
 
