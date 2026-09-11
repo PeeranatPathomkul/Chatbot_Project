@@ -16,7 +16,9 @@ The rate does not include breakfast, as the resort does not serve breakfast.
 <<TODO: whether the 650 THB rate already includes VAT>>
 
 ## Extra Charges
-Extra bed: 200 THB per bed per night, available in any room.
+Extra bed: 200 THB per bed per night, available in any room, charged on top of the
+650 THB per room per night rate.
+Example: 2 rooms with 1 extra bed for 1 night = (650 x 2) + 200 = 1,500 THB.
 <<TODO: any other charges, such as a late check-out fee after 12:00 noon>>
 
 ## Payment and Deposit

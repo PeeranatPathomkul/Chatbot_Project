@@ -36,7 +36,7 @@ Q: How many people can stay in one room?
 A: Each room sleeps 2 to 3 guests. A third guest needs an extra bed, which costs 200 THB per night.
 
 Q: Can I request an extra bed? How much is it?
-A: Yes, an extra bed can be added to any room for 200 THB per night. Please request it when you book.
+A: Yes, an extra bed can be added to any room for 200 THB per bed per night, on top of the 650 THB room rate. For example, one room with one extra bed comes to 850 THB per night. Please request it when you book.
 
 Q: Do children stay free?
 A: The resort charges per room rather than per person, so there is no separate child policy. Children stay at no extra cost as long as the total number of guests fits the room. If you need an additional bed, the 200 THB per night extra bed fee applies.

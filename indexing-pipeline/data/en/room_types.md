@@ -43,7 +43,9 @@ hairdryer
 a table and chairs for relaxing in the room
 
 ## Extra Beds and Children
-An extra bed can be added to any room for 200 THB per night.
+An extra bed can be added to any room for 200 THB per bed per night.
+This is charged on top of the room rate of 650 THB per room per night.
+Example: one room with one extra bed = 650 + 200 = 850 THB per night.
 With an extra bed, a room sleeps up to 3 guests.
 Please request the extra bed when you book.
 
