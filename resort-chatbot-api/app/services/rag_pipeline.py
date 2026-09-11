@@ -3,7 +3,7 @@
 รับคำถาม -> embed -> ค้นหา context จาก vector store -> ประกอบ prompt -> เรียก LLM -> คืนคำตอบ
 """
 
-from app.core.prompts import NO_CONTEXT_ANSWER, SYSTEM_PROMPT_TEMPLATE
+from app.core.prompts import NO_CONTEXT_ANSWER, SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 from app.schemas.chat import ChatResponse, Source, SuggestedAction
 from app.services.embedding_service import EmbeddingService, get_embedding_service
 from app.services.llm_client import LLMClient, get_llm_client
@@ -39,17 +39,16 @@ class RAGPipeline:
                 suggested_action=SuggestedAction(type="none", url=""),
             )
 
-        # 3. ประกอบ prompt จาก system prompt + context + คำถาม
+        # 3. ประกอบ prompt — กติกาไปไว้ใน system ส่วนข้อมูลอ้างอิงกับคำถามไว้ใน user
+        #    การแยกแบบนี้เป็นสิ่งที่ทำให้โมเดลยอมปฏิเสธเมื่อไม่มีข้อมูล
+        #    (ถ้ายัดรวมเป็นก้อนเดียวมันจะแต่งคำตอบขึ้นมา ดู app/core/prompts.py)
         context_text = "\n\n".join(f"- {hit['text']}" for hit in hits)
-        prompt = SYSTEM_PROMPT_TEMPLATE.format(
-            resort_id=resort_id,
-            language=language,
-            context=context_text,
-            question=message,
-        )
+        user_prompt = USER_PROMPT_TEMPLATE.format(context=context_text, question=message)
 
         # 4. เรียก LLM เพื่อสร้างคำตอบ
-        answer_text = await self.llm_client.generate(prompt)
+        answer_text = await self.llm_client.generate(
+            user_prompt, system=SYSTEM_PROMPT.format(language=language)
+        )
 
         # 5. คำนวณ confidence คร่าว ๆ จากระยะห่างของผลลัพธ์อันดับ 1 (cosine distance ยิ่งน้อยยิ่งใกล้)
         best_distance = hits[0]["distance"]

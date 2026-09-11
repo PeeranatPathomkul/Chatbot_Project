@@ -19,8 +19,15 @@ class LLMClient(ABC):
     """Interface กลางที่ทุก provider ต้อง implement"""
 
     @abstractmethod
-    async def generate(self, prompt: str) -> str:
-        """ส่ง prompt ไปยัง LLM แล้วคืนค่าคำตอบเป็นข้อความ"""
+    async def generate(self, prompt: str, system: str | None = None) -> str:
+        """ส่ง prompt ไปยัง LLM แล้วคืนค่าคำตอบเป็นข้อความ
+
+        Args:
+            prompt: ข้อความของผู้ใช้ (ข้อมูลอ้างอิง + คำถาม)
+            system: กติกาที่โมเดลต้องทำตาม ส่งแยกเป็น system role
+                สำคัญมาก: ถ้ายัดรวมไปกับ prompt โมเดลจะไม่ทำตามกติกา
+                (ดูเหตุผลและผลทดสอบใน app/core/prompts.py)
+        """
         raise NotImplementedError
 
 
@@ -32,11 +39,14 @@ class TyphoonLLMClient(LLMClient):
         self.base_url = base_url or settings.typhoon_base_url
         self.model = model or settings.typhoon_model
 
-    async def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str, system: str | None = None) -> str:
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        messages = [{"role": "user", "content": prompt}]
+        if system:
+            messages.insert(0, {"role": "system", "content": system})
         payload = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "temperature": 0.2,
         }
         async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
@@ -56,9 +66,12 @@ class GeminiLLMClient(LLMClient):
         self.model = model or settings.gemini_model
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
 
-    async def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str, system: str | None = None) -> str:
         url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
-        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+        payload: dict = {"contents": [{"parts": [{"text": prompt}]}]}
+        if system:
+            # Gemini รับ system prompt คนละ field กับ OpenAI schema
+            payload["systemInstruction"] = {"parts": [{"text": system}]}
         async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()

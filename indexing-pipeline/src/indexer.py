@@ -232,7 +232,8 @@ def index_directory(
         stats.chunks_per_file[document.source] = len(chunks)
         stats.chunks_created += len(chunks)
         stats.broken_boundaries.extend(find_broken_boundaries(chunks))
-        stats.placeholders.extend(find_placeholders(chunks))
+        # นับจากเอกสารต้นฉบับ เพราะ chunk_document ตัดบรรทัดที่มี placeholder ทิ้งไปแล้ว
+        stats.placeholders.extend(find_placeholders([document]))
 
         if not reset:
             # ลบของเก่าของไฟล์นี้ก่อน กัน chunk ที่หายไปจากเอกสารค้างอยู่ใน DB
@@ -427,7 +428,7 @@ def _print_todo(data_dir: Path | None) -> int:
 
     total = 0
     for document in documents:
-        placeholders = find_placeholders(chunk_document(document))
+        placeholders = find_placeholders([document])
         if not placeholders:
             print(f"  [ครบแล้ว] {document.source}")
             continue

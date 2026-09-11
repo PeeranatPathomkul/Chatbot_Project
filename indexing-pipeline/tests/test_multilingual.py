@@ -153,20 +153,58 @@ def test_build_where_สองเงื่อนไขต้องห่อด�
 
 
 def test_find_placeholders_เจอ_placeholder(tmp_path: Path) -> None:
+    """นับจากเอกสารต้นฉบับ ไม่ใช่จาก chunk เพราะ chunk ตัดบรรทัดพวกนี้ทิ้งไปแล้ว"""
     path = tmp_path / "draft.md"
     path.write_text(
-        "# ราคา\n\nห้องดีลักซ์ราคา <<รอเติม: ราคาห้องดีลักซ์>> บาทต่อคืน "
-        "และเช็คอินได้ตั้งแต่ <<รอเติม: เวลาเช็คอิน>> เป็นต้นไปทุกวัน",
+        "# ราคา\n\nห้องดีลักซ์ราคา <<รอเติม: ราคาห้องดีลักซ์>> บาทต่อคืน\n"
+        "เช็คอินได้ตั้งแต่ <<รอเติม: เวลาเช็คอิน>> เป็นต้นไปทุกวัน",
         encoding="utf-8",
     )
-    found = find_placeholders(chunk_document(load_document(path)))
+    found = find_placeholders([load_document(path)])
     texts = {text for _, text in found}
     assert texts == {"<<รอเติม: ราคาห้องดีลักซ์>>", "<<รอเติม: เวลาเช็คอิน>>"}
 
 
 def test_find_placeholders_เอกสารที่เติมครบแล้วต้องได้ผลว่าง(data_dir: Path) -> None:
     """fixture คือเอกสารที่ 'เติมครบ' แล้ว จึงต้องไม่มี placeholder เหลือ"""
-    assert find_placeholders(chunk_directory(data_dir)) == []
+    assert find_placeholders(load_documents(data_dir)) == []
+
+
+# --------------------------------------------------------------------------
+# placeholder ต้องไม่หลุดเข้า chunk ที่ส่งให้ LLM
+# --------------------------------------------------------------------------
+
+
+def test_บรรทัดที่มี_placeholder_ต้องไม่ถูก_index(tmp_path: Path) -> None:
+    """วัดจากการทดลองจริงกับ Typhoon: ถ้าปล่อย placeholder ติดไปกับ context
+    LLM จะเอาข้อความใบ้ข้างในไปตอบเป็นข้อเท็จจริง เช่น
+
+        context : รหัสผ่าน Wi-Fi: <<รอเติม: รับรหัสได้ที่ไหน หรือแจ้งตอนเช็คอิน>>
+        คำตอบ   : "รับรหัสได้ที่แผนกต้อนรับตอนเช็คอิน"   <-- แต่งขึ้นจากคำใบ้
+    """
+    path = tmp_path / "facilities.md"
+    path.write_text(
+        "# สิ่งอำนวยความสะดวก\n\n"
+        "มี Wi-Fi ให้ใช้ฟรีทุกห้องพัก ไม่มีค่าใช้จ่ายเพิ่มเติมแต่อย่างใด\n"
+        "รหัสผ่าน Wi-Fi: <<รอเติม: รับรหัส Wi-Fi ได้ที่ไหน หรือแจ้งตอนเช็คอิน>>\n"
+        "รถรับส่ง: <<รอเติม: มีบริการรถรับส่งหรือไม่>>\n",
+        encoding="utf-8",
+    )
+    document = load_document(path)
+    combined = " ".join(c.text for c in chunk_document(document))
+
+    assert "<<" not in combined
+    assert "แจ้งตอนเช็คอิน" not in combined, "ข้อความใบ้ใน placeholder หลุดเข้า chunk"
+    assert "รถรับส่ง" not in combined, "หัวข้อที่ยังไม่มีข้อมูลต้องไม่เหลือค้างให้ LLM เติมเอง"
+    assert "มี Wi-Fi ให้ใช้ฟรีทุกห้องพัก" in combined, "ข้อมูลจริงต้องยังอยู่ครบ"
+
+    # แต่ --todo ต้องยังนับ placeholder ได้ เพื่อบอกว่าเหลืออะไรต้องเติมบ้าง
+    assert len(find_placeholders([document])) == 2
+
+
+def test_เอกสารจริงต้องไม่มี_placeholder_หลุดเข้า_chunk() -> None:
+    combined = " ".join(c.text for c in chunk_directory(REAL_DATA_DIR))
+    assert "<<" not in combined and ">>" not in combined
 
 
 @pytest.mark.skipif(not REAL_DATA_DIR.is_dir(), reason="ยังไม่มีโฟลเดอร์ data/")

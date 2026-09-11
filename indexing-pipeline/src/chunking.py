@@ -330,7 +330,8 @@ def chunk_document(
     splitter = create_splitter(chunk_size, chunk_overlap)
     chunks: list[Chunk] = []
 
-    for heading, section_text in split_into_sections(strip_editor_notes(document.body)):
+    body = strip_placeholder_lines(strip_editor_notes(document.body))
+    for heading, section_text in split_into_sections(body):
         for piece in splitter.split_text(section_text):
             piece = piece.strip()
             if len(piece) < config.MIN_CHUNK_CHARS:
@@ -406,18 +407,41 @@ def strip_context_header(text: str) -> str:
 _PLACEHOLDER_RE = re.compile(config.PLACEHOLDER_PATTERN)
 
 
-def find_placeholders(chunks: list[Chunk]) -> list[tuple[str, str]]:
-    """หา chunk ที่ยังมี placeholder ``<<...>>`` ค้างอยู่
+def find_placeholders(documents: list[SourceDocument]) -> list[tuple[str, str]]:
+    """หา placeholder ``<<...>>`` ที่ยังค้างอยู่ใน **เอกสารต้นฉบับ**
 
-    เอกสารใน ``data/`` เป็นโครงที่รอเติมข้อมูลจริง ถ้า index ทั้งที่ยังมี placeholder
-    แชทบอทจะตอบลูกค้าด้วยข้อความอย่าง "<<รอเติม: ราคา>>" อย่างมั่นใจ
-    ซึ่งแย่กว่าการตอบว่าไม่ทราบมาก
+    ต้องอ่านจากเอกสารต้นฉบับ ไม่ใช่จาก chunk เพราะ ``chunk_document`` ตัดบรรทัดที่มี
+    placeholder ทิ้งไปแล้ว (ดู ``strip_placeholder_lines``) ถ้าไปนับจาก chunk จะได้ 0 เสมอ
 
     Returns:
-        list ของ (chunk_id, placeholder ที่เจอ) — หนึ่งรายการต่อหนึ่ง placeholder
+        list ของ (ชื่อไฟล์, placeholder ที่เจอ) — หนึ่งรายการต่อหนึ่ง placeholder
     """
     found: list[tuple[str, str]] = []
-    for chunk in chunks:
-        for match in _PLACEHOLDER_RE.findall(chunk.text):
-            found.append((chunk.chunk_id, match))
+    for document in documents:
+        for match in _PLACEHOLDER_RE.findall(document.body):
+            found.append((document.source, match))
     return found
+
+
+def strip_placeholder_lines(body: str) -> str:
+    """ตัดบรรทัดที่ยังมี placeholder ``<<...>>`` ออกก่อนนำไป chunk
+
+    **เหตุผล (วัดจากการทดลองจริงกับ Typhoon):**
+    ตอนแรกเราปล่อยให้ placeholder ติดไปกับ chunk แล้วหวังว่า LLM จะเห็นแล้วรู้ว่า
+    "ไม่มีข้อมูล" แต่ผลจริงตรงกันข้าม — LLM เอา **ข้อความใบ้ข้างใน placeholder**
+    ไปตอบเป็นข้อเท็จจริง เช่น
+
+        context : รหัสผ่าน Wi-Fi: <<รอเติม: รับรหัสได้ที่ไหน หรือแจ้งตอนเช็คอิน>>
+        คำตอบ   : "รับรหัสได้ที่แผนกต้อนรับตอนเช็คอิน"    <-- แต่งขึ้นจากคำใบ้
+
+    อาการนี้จับได้ยากกว่าการพ่น "<<รอเติม: ...>>" ออกมาตรง ๆ มาก เพราะคำตอบดูสมเหตุสมผล
+    การตัดทิ้งทำให้ไม่มีบรรทัดนั้นใน context เลย LLM จึงตอบว่าไม่มีข้อมูลได้ถูกต้อง
+
+    ตัด **ทั้งบรรทัด** ไม่ใช่แค่ช่วง ``<<...>>`` เพราะถ้าเหลือแต่หัวข้อค้างไว้
+    (เช่น "รถรับส่ง:") LLM ก็ยังเติมคำตอบต่อท้ายให้อยู่ดี
+    ผลข้างเคียงคือถ้าบรรทัดหนึ่งมีทั้งข้อมูลจริงและ placeholder ปนกัน ข้อมูลจริงจะหายไปด้วย
+    ซึ่งยอมรับได้ เพราะข้อมูลขาดยังดีกว่าข้อมูลที่ถูกแต่งขึ้น
+    """
+    return "\n".join(
+        line for line in body.splitlines() if not _PLACEHOLDER_RE.search(line)
+    )
