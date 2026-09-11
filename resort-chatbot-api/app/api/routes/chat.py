@@ -22,7 +22,6 @@ async def query(
     """รับคำถามจากผู้ใช้ แล้วตอบกลับด้วย RAG pipeline"""
     return await pipeline.answer(
         session_id=request.session_id,
-        resort_id=request.resort_id,
         message=request.message,
         language=request.language,
     )
