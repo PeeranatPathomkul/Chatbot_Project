@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     typhoon_api_key: str = ""
     typhoon_base_url: str = "https://api.opentyphoon.ai/v1"
-    typhoon_model: str = "typhoon-v2.1-12b-instruct"
+    typhoon_model: str = "typhoon-v2.5-30b-a3b-instruct"
 
     gemini_api_key: str = ""
     gemini_model: str = "gemini-1.5-flash"
