@@ -4,35 +4,41 @@ language: en
 title: Resort Overview
 ---
 
-# About <<TODO: resort name in English>>
+# About Poonsuk Resort Sadao
 
 ## Introduction
-<<TODO: resort name in English>> is located in <<TODO: district and province>>.
-It is a <<TODO: resort style, e.g. contemporary nature / Lanna / minimalist>> resort
-with <<TODO: total number of rooms>> rooms across <<TODO: number of room types>> room types.
-The resort has been open since <<TODO: year opened>>.
+Poonsuk Resort (Poonsuk Resort @Sadao) is located in Sadao District, Songkhla Province, Thailand.
+It is a Nordic-style accommodation where each room is a separate small private house,
+set in quiet, shaded and peaceful surroundings.
+The resort has 6 rooms in total, in 2 types: single-bed rooms and twin-bed rooms.
 
-Highlights: <<TODO: 2-3 main selling points, e.g. 360-degree mountain view, infinity pool, organic breakfast>>
-Best suited for: <<TODO: primary guest segments, e.g. couples, families with young children, corporate retreats>>
+Highlights: clean and spacious rooms, air conditioning, free Wi-Fi, a private bathroom in every
+room, convenient and secure parking, and a quiet, private, green setting that feels like a second home.
+Best suited for: guests who want privacy and quiet, travellers visiting Sadao on business,
+and small families — each room sleeps 2 to 3 guests.
 
 ## Contact
-Phone: <<TODO: resort phone number>>
-LINE Official: <<TODO: LINE ID>>
-Email: <<TODO: reservations email>>
-Website: <<TODO: website URL>>
-Facebook: <<TODO: Facebook page name>>
+Phone: 081-598-1199
+Facebook: Poonsuk Resort Sadao
+LINE Official: <<TODO: LINE ID if available, or state that there is none>>
+Email: <<TODO: reservations email if available, or state that there is none>>
+Website: <<TODO: website URL if available, or state that there is none>>
 
-Front desk hours: <<TODO: front desk operating hours, e.g. 24 hours or 07:00-22:00>>
-In-house extension: dial <<TODO: internal extension number>>
+The easiest ways to book and ask questions are by phone at 081-598-1199 and on Facebook.
+Front desk hours: <<TODO: front desk operating hours, e.g. 08:00-20:00>>
 
-## Booking Channels
-You can book through: <<TODO: booking channels, e.g. official website, LINE, phone, Agoda, Booking.com>>
-Direct booking benefits: <<TODO: direct booking perks, e.g. 10% discount or complimentary welcome drink>>
+## Booking
+Book by calling 081-598-1199 or messaging Facebook: Poonsuk Resort Sadao.
+A booking is confirmed once the room deposit has been paid.
+Booking via travel apps: <<TODO: whether the resort is listed on Agoda / Booking.com / Airbnb>>
 
 ## Languages Spoken
-Our staff speak: <<TODO: languages spoken by staff, e.g. Thai, English, Chinese>>
+Our staff speak: <<TODO: languages spoken by staff, e.g. Thai, English, Malay>>
 
 ## Policy Summary
-Check-in from <<TODO: check-in time>> / check-out by <<TODO: check-out time>>
-Minimum age requiring a guardian: <<TODO: age policy>>
+Check-in from 2:00 PM / check-out by 12:00 noon.
+Room rate is 650 THB per night, the same for every room type and every day of the week.
+Each room sleeps 2 to 3 guests. An extra bed costs 200 THB per night.
+No pets are allowed, and smoking is not permitted inside the rooms.
+Breakfast is not provided.
 Full details are in the "Booking and Stay Policy" section.

@@ -6,52 +6,51 @@ title: Room Types and In-Room Amenities
 
 # Room Types
 
-> Note for content editors: if you have more or fewer than 3 room types,
-> add or remove the "## ... Room" sections accordingly, keeping the same
-> heading format. The pipeline splits chunks on `##` headings automatically.
-> Keep this file consistent with data/th/room_types.md.
+Poonsuk Resort has 6 rooms in total. Each room is a separate small house.
+There are 2 room types: single-bed rooms and twin-bed rooms.
+Both types cost the same — 650 THB per night — and each sleeps 2 to 3 guests.
 
-## <<TODO: room type 1 name, e.g. Superior>> Room
-Room size: <<TODO: room size in square metres>> sqm
-Bed: <<TODO: bed type and count, e.g. 1 king bed or 2 twin beds>>
-Maximum occupancy: <<TODO: maximum occupancy>> guests
-View: <<TODO: view from the room, e.g. garden, mountain, pool>>
-Bathroom: <<TODO: bathroom details, e.g. shower only, or separate wet/dry area with bathtub>>
-In-room amenities: <<TODO: amenity list, e.g. air conditioning, TV, minibar, kettle, hairdryer, safe, Wi-Fi>>
-Extra bed: <<TODO: whether an extra bed is available, how many, and the nightly charge>>
-Number of rooms of this type: <<TODO: room count for this type>>
+## Single-Bed Room
+A single-bed room has one large bed, ideal for couples or two guests.
+It sleeps 2 to 3 guests (a third guest requires an extra bed).
+Rate: 650 THB per night.
+Room size: <<TODO: single-bed room size in square metres>>
+Room numbers: <<TODO: which rooms are single-bed rooms, e.g. P1 P2 P3 P4>>
 
-## <<TODO: room type 2 name, e.g. Deluxe>> Room
-Room size: <<TODO: room type 2 size in square metres>> sqm
-Bed: <<TODO: room type 2 bed configuration>>
-Maximum occupancy: <<TODO: room type 2 maximum occupancy>> guests
-View: <<TODO: room type 2 view>>
-Bathroom: <<TODO: room type 2 bathroom details>>
-In-room amenities: <<TODO: room type 2 amenity list>>
-Extra bed: <<TODO: room type 2 extra bed policy>>
-Number of rooms of this type: <<TODO: room type 2 room count>>
+## Twin-Bed Room
+A twin-bed room has two separate beds, ideal for friends or families who prefer separate beds.
+It sleeps 2 to 3 guests (a third guest requires an extra bed).
+Rate: 650 THB per night.
+Room size: <<TODO: twin-bed room size in square metres>>
+Room numbers: <<TODO: which rooms are twin-bed rooms, e.g. F1 F2>>
 
-## <<TODO: room type 3 name, e.g. Pool Villa>>
-Room size: <<TODO: room type 3 size in square metres>> sqm
-Bed: <<TODO: room type 3 bed configuration>>
-Maximum occupancy: <<TODO: room type 3 maximum occupancy>> guests
-View: <<TODO: room type 3 view>>
-Bathroom: <<TODO: room type 3 bathroom details>>
-In-room amenities: <<TODO: room type 3 amenity list>>
-Extra bed: <<TODO: room type 3 extra bed policy>>
-Number of rooms of this type: <<TODO: room type 3 room count>>
+## All Rooms
+The resort has 6 rooms: P1, P2, P3, P4, F1 and F2.
+Every room is a detached house with its own private bathroom and parking close by.
+
+## In-Room Amenities
+All rooms have the same amenities:
+air conditioning, free high-speed Wi-Fi, a private bathroom inside the room,
+a table and chairs for relaxing in the room, and complimentary instant coffee sachets.
+Water heater: <<TODO: whether the bathroom has a water heater>>
+Television: <<TODO: whether rooms have a TV>>
+Refrigerator: <<TODO: whether rooms have a fridge>>
+Electric kettle: <<TODO: whether rooms have a kettle>>
+Towels and toiletries: <<TODO: whether these are provided>>
+Hairdryer: <<TODO: whether a hairdryer is provided>>
 
 ## Extra Beds and Children
-Extra beds are available only in: <<TODO: room types that allow an extra bed>>
-Extra bed rate: <<TODO: extra bed rate per night, and whether breakfast is included>>
-Advance notice required: <<TODO: required advance notice, e.g. 3 days>>
+An extra bed can be added to any room for 200 THB per night.
+With an extra bed, a room sleeps up to 3 guests.
+Please request the extra bed when you book.
 
-Children under <<TODO: age threshold for free stay>> stay free when sharing the existing bedding.
-Children aged <<TODO: age range charged extra>> are charged <<TODO: child rate per night>>.
-Baby cot: <<TODO: whether cots are available, free or paid, and whether advance notice is needed>>
+The resort charges per room, not per person, so there is no separate child policy.
+Children stay at no additional cost as long as the total number of guests stays within
+the room's capacity. If you need an additional bed, the 200 THB per night extra bed fee applies.
+Baby cot: <<TODO: whether a baby cot can be borrowed>>
 
-## Amenities Available in All Rooms
-<<TODO: amenities common to every room, e.g. free Wi-Fi, air conditioning, linens, towels, toiletries>>
-
-## Not Available in Rooms
-<<TODO: commonly requested items that are NOT provided, e.g. microwave, iron, toothbrush — so the chatbot can decline accurately instead of guessing>>
+## Not Provided in the Rooms
+Breakfast is not provided — the rate covers the room only.
+There is no room service.
+Smoking is not permitted inside the rooms.
+Pets are not allowed.

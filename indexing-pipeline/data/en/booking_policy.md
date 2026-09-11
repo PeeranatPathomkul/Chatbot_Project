@@ -7,45 +7,43 @@ title: Booking, Check-in, Check-out and Cancellation Policy
 # Booking and Stay Policy
 
 ## Check-in and Check-out Times
-Standard check-in is from <<TODO: check-in time, e.g. 2:00 PM>>.
-Check-out is before <<TODO: check-out time, e.g. 12:00 noon>> on the day of departure.
-Early check-in: <<TODO: early check-in conditions and charge>>
-Late check-out: <<TODO: late check-out conditions and charge>>
-If you arrive before check-in time: <<TODO: what guests can do while waiting, e.g. free luggage storage, pool access>>
-Late arrival: <<TODO: latest check-in time accepted and whether advance notice is required>>
+Check-in is from 2:00 PM onwards.
+Check-out is before 12:00 noon on the day of departure.
+Early check-in: <<TODO: whether check-in before 2:00 PM is possible and whether there is a charge>>
+Late check-out: <<TODO: whether check-out after 12:00 noon is possible and the charge>>
+If you arrive before check-in time: <<TODO: whether luggage can be stored>>
+Late arrival: <<TODO: the latest time check-in is accepted, and whether you must call ahead>>
 
 ## Required Documents
-Guests must present: <<TODO: required documents, e.g. original ID card or passport>>
-Security deposit: <<TODO: deposit amount and refund conditions, or state that none is collected>>
+Guests must present: <<TODO: whether an original ID card or passport is required>>
+Security deposit: <<TODO: whether a damage deposit is collected, and how much>>
 
 ## Booking and Payment
-A booking is confirmed when: <<TODO: what confirms a booking, e.g. 50% deposit paid within 24 hours>>
-The balance is due: <<TODO: when the balance is due, e.g. on check-in>>
-Receipts and tax invoices: <<TODO: whether these can be issued and whether advance notice is needed>>
+Book by calling 081-598-1199 or messaging Facebook: Poonsuk Resort Sadao.
+A booking is only confirmed once the room deposit has been paid.
+The balance is paid on the day of check-in.
+Deposit amount and transfer details are in the "Room Rates" section.
 
 ## Cancellation Policy
-<<TODO: refund terms for early cancellation, e.g. more than 14 days: full refund>>
-<<TODO: refund terms for medium-notice cancellation, e.g. 7-14 days: 50% refund>>
-<<TODO: refund terms for late cancellation, e.g. less than 7 days: no refund>>
-No-show: <<TODO: no-show policy>>
-Refund processing time: <<TODO: number of business days>>
+You may cancel at any time — there is no minimum notice period.
+However, the deposit you have paid is non-refundable in all cases.
+The resort does not refund deposits regardless of how far in advance you cancel.
+Please be certain of your dates before paying the deposit.
 
 ## Date Changes
-<<TODO: whether dates can be changed, how many times, required notice, and the window for rebooking>>
-Moving to a higher-priced period: <<TODO: whether the guest pays the difference>>
-
-## Bookings via Travel Agents
-<<TODO: policy for bookings made via Agoda, Booking.com or other agents, e.g. the agent's own cancellation policy applies>>
+<<TODO: whether dates can be changed, how much notice is required, and whether the deposit carries over>>
 
 ## Pet Policy
-<<TODO: whether pets are accepted; if so, size/type/number limits, which rooms, and the fee>>
-Areas where pets are and are not allowed: <<TODO: specify areas, e.g. not permitted in the restaurant or pool area>>
+The resort does not accept pets. Animals of any kind and any size, including dogs and cats,
+are not permitted anywhere on the property.
 
 ## Smoking Policy
-<<TODO: whether rooms are non-smoking and the penalty for violations>>
-Designated smoking areas: <<TODO: where smoking is permitted>>
+All rooms are non-smoking. Smoking inside the rooms is not permitted.
+Designated smoking areas: <<TODO: whether there is an outdoor smoking area, and where>>
+Penalty for violations: <<TODO: whether a fine or special cleaning fee applies, and how much>>
 
-## Noise and Events
-Quiet hours: <<TODO: quiet hours>>
-In-room parties: <<TODO: whether permitted and under what conditions>>
-Non-staying visitors: <<TODO: whether allowed, registration requirements, and any charge>>
+## Noise and Visitors
+The resort's appeal is its quiet and privacy, so we ask guests not to disturb other rooms with noise.
+Quiet hours: <<TODO: whether there are designated quiet hours, and from what time>>
+In-room parties: <<TODO: whether permitted>>
+Non-staying visitors: <<TODO: whether visitors may enter the property, and whether a charge applies>>

@@ -1,51 +1,38 @@
 ---
 category: ราคา
 language: en
-title: Room Rates, Packages and Extra Charges
+title: Room Rates, Promotions and Extra Charges
 ---
 
 # Room Rates
 
-All rates are per room per night.
-Breakfast for <<TODO: number of guests included in breakfast>> guests is included.
-<<TODO: state whether VAT and service charge are already included>>
-These rates apply to <<TODO: year these rates are valid for>>.
+## Room Rate
+The room rate is 650 THB per room per night.
+The rate is the same for both single-bed and twin-bed rooms.
+It is also the same every day — weekdays and weekends alike, with no weekend surcharge.
+The rate is charged per room and covers 2 to 3 guests per room.
 
-## Weekday Rates
-Weekdays are defined as <<TODO: days counted as weekdays, e.g. Sunday to Thursday>>.
+The rate does not include breakfast, as the resort does not serve breakfast.
+<<TODO: whether the 650 THB rate already includes VAT>>
 
-<<TODO: room type 1 name>>: <<TODO: room type 1 weekday rate>> THB per night
-<<TODO: room type 2 name>>: <<TODO: room type 2 weekday rate>> THB per night
-<<TODO: room type 3 name>>: <<TODO: room type 3 weekday rate>> THB per night
+## Promotion: Book 3 Rooms or 3 Nights
+Book 3 or more rooms, or stay 3 or more consecutive nights,
+and the rate drops to 600 THB per room per night instead of the usual 650 THB —
+a saving of 50 THB per room per night.
+<<TODO: how long this promotion runs, or whether it is permanent>>
 
-## Weekend Rates
-Weekends are defined as <<TODO: days counted as weekend, e.g. Friday and Saturday>>.
+## Extra Charges
+Extra bed: 200 THB per bed per night, available in any room.
+<<TODO: any other charges, such as early check-in or late check-out fees>>
 
-<<TODO: room type 1 name>>: <<TODO: room type 1 weekend rate>> THB per night
-<<TODO: room type 2 name>>: <<TODO: room type 2 weekend rate>> THB per night
-<<TODO: room type 3 name>>: <<TODO: room type 3 weekend rate>> THB per night
+## Payment and Deposit
+A booking is confirmed once the room deposit has been paid.
+Deposit amount: <<TODO: deposit amount in THB, or as a percentage of the total>>
+Deposit deadline: <<TODO: how soon after booking the deposit must be transferred>>
+The balance is paid on the day of check-in.
+Payment methods: <<TODO: cash, bank transfer, PromptPay or credit card — and the account details for transfers>>
+Receipts and tax invoices: <<TODO: whether these can be issued>>
 
-## High Season Rates
-High season covers <<TODO: high season date ranges, e.g. 25 Dec - 5 Jan, Songkran 12-16 Apr>>.
-High season rate: <<TODO: high season rate, or the percentage surcharge>>
-Minimum stay during high season: <<TODO: minimum nights>> nights
-
-## Packages
-<<TODO: package 1 name>> — <<TODO: what package 1 includes>>. Price: <<TODO: package 1 price>> THB
-<<TODO: package 2 name>> — <<TODO: what package 2 includes>>. Price: <<TODO: package 2 price>> THB
-
-## Discounts and Promotions
-Long stay: <<TODO: long-stay discount terms, e.g. 20% off for 7+ nights>>
-Early bird: <<TODO: early booking discount terms, if any>>
-Other discounts: <<TODO: other discounts such as senior, student, membership — or state that none apply>>
-
-## Additional Charges
-Extra bed: <<TODO: extra bed rate per night>>
-Additional breakfast: adults <<TODO: adult breakfast price>>, children <<TODO: child breakfast price>>
-Airport transfer: <<TODO: transfer charge per trip>>
-Pet fee: <<TODO: pet fee per pet per night, or state that pets are not accepted>>
-Early check-in / late check-out: <<TODO: early check-in and late check-out charges>>
-
-## Payment Methods
-We accept: <<TODO: accepted payment methods, e.g. cash, credit card, bank transfer, QR PromptPay>>
-<<TODO: state whether a credit card surcharge applies>>
+## Not Included in the Rate
+The 650 THB rate covers the room only. It does not include breakfast or an extra bed.
+The resort has no breakfast service, no restaurant and no room service.
