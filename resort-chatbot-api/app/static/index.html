@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ทดสอบแชทบอท — พูนสุข รีสอร์ท</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --panel: #ffffff;
+    --line: #dfe4ea;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --brand: #1f7a4d;
+    --brand-soft: #e8f3ed;
+    --user: #1f7a4d;
+    --warn-bg: #fff5e6;
+    --warn-line: #e4b363;
+    --warn-text: #8a5a00;
+    --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161a; --panel: #1a2026; --line: #2c353d; --text: #e6e9ec;
+      --muted: #99a3ad; --brand: #4ea87a; --brand-soft: #1d2f26;
+      --user: #2f6f52; --warn-bg: #33280f; --warn-line: #7a5f22; --warn-text: #e0b96a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", "Sarabun", system-ui, -apple-system, sans-serif;
+    font-size: 15px; line-height: 1.6;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 16px; }
+
+  header {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 14px;
+  }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+
+  .status {
+    font-size: 12px; padding: 3px 9px; border-radius: 99px;
+    border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  }
+  .status.ok { color: var(--brand); border-color: var(--brand); }
+  .status.down { color: #c0392b; border-color: #c0392b; }
+
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    border: 0; background: var(--panel); color: var(--text);
+    padding: 6px 14px; cursor: pointer; font-size: 14px; font-family: inherit;
+  }
+  .seg button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+  .ghost {
+    border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  .ghost:hover { color: var(--text); }
+
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .samples button {
+    border: 1px dashed var(--line); background: transparent; color: var(--muted);
+    border-radius: 99px; padding: 4px 11px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .samples button:hover { border-style: solid; color: var(--text); }
+
+  #log {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; min-height: 300px; max-height: 58vh; overflow-y: auto;
+  }
+  .empty { color: var(--muted); text-align: center; padding: 60px 12px; font-size: 14px; }
+
+  .turn { margin-bottom: 16px; }
+  .bubble {
+    display: inline-block; max-width: 88%; padding: 9px 13px;
+    border-radius: var(--radius); white-space: pre-wrap; word-break: break-word;
+  }
+  .me { text-align: right; }
+  .me .bubble { background: var(--user); color: #fff; border-bottom-right-radius: 3px; }
+  .bot .bubble { background: var(--brand-soft); border-bottom-left-radius: 3px; }
+  .bot.refused .bubble { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-text); }
+
+  .meta {
+    margin-top: 5px; font-size: 12px; color: var(--muted);
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  .tag { padding: 1px 7px; border-radius: 99px; border: 1px solid var(--line); }
+  .tag.yes { color: var(--brand); border-color: var(--brand); }
+  .tag.no { color: var(--warn-text); border-color: var(--warn-line); }
+
+  details.src { margin-top: 6px; font-size: 13px; }
+  details.src summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  details.src ol { margin: 6px 0 0; padding-left: 20px; color: var(--muted); }
+  details.src li { margin-bottom: 6px; }
+  details.src code { font-size: 11px; color: var(--brand); }
+
+  form { display: flex; gap: 8px; margin-top: 12px; }
+  #q {
+    flex: 1; padding: 11px 13px; font-size: 15px; font-family: inherit;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--panel); color: var(--text);
+  }
+  #q:focus { outline: 2px solid var(--brand); outline-offset: -1px; }
+  #send {
+    padding: 11px 22px; font-size: 15px; font-family: inherit; font-weight: 600;
+    border: 0; border-radius: 10px; background: var(--brand); color: #fff; cursor: pointer;
+  }
+  #send:disabled { opacity: .5; cursor: default; }
+
+  .note {
+    margin-top: 14px; padding: 10px 13px; font-size: 13px; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  }
+  .note b { color: var(--text); }
+  .dots::after { content: "."; animation: dots 1.2s steps(4, end) infinite; }
+  @keyframes dots { 0%,20%{content:"."} 40%{content:".."} 60%{content:"..."} 80%,100%{content:""} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>ทดสอบแชทบอท</h1>
+    <span class="sub">พูนสุข รีสอร์ท สะเดา</span>
+    <span class="spacer"></span>
+    <span class="status" id="status">กำลังตรวจสอบ…</span>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="ภาษา">
+      <button type="button" data-lang="th" aria-pressed="true">ไทย</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+    </div>
+    <button type="button" class="ghost" id="clear">ล้างบทสนทนา</button>
+  </div>
+
+  <div class="samples" id="samples"></div>
+
+  <div id="log"><div class="empty">พิมพ์คำถามด้านล่าง หรือกดคำถามตัวอย่างเพื่อเริ่มทดสอบ</div></div>
+
+  <form id="form">
+    <input id="q" autocomplete="off" placeholder="พิมพ์คำถาม แล้วกด Enter">
+    <button id="send" type="submit">ส่ง</button>
+  </form>
+
+  <p class="note">
+    กรอบสีส้มคือคำตอบที่บอท <b>ปฏิเสธ</b> เพราะไม่มีข้อมูลในคลัง — ไม่ใช่ข้อผิดพลาด
+    แต่เป็นพฤติกรรมที่ต้องการ ให้ดู <b>answered</b> เป็นหลัก ไม่ใช่ <b>score</b>
+    เพราะคำถามที่ระบบไม่มีคำตอบก็ได้ score สูงราว 0.83 พอ ๆ กับคำถามที่ตอบได้
+  </p>
+
+</div>
+
+<script>
+const API = "/api/v1/chatbot";
+const SESSION = "ui-" + Math.random().toString(36).slice(2, 10);
+
+const SAMPLES = {
+  th: ["ห้องพักคืนละเท่าไหร่", "เช็คอินกี่โมง", "พาหมามาได้ไหม", "ห้อง P2 เป็นเตียงแบบไหน",
+       "มัดจำกี่บาท โอนเข้าเบอร์ไหน", "ที่จอดรถจอดได้กี่คัน", "มีอาหารเช้าไหม",
+       "จากสนามบินหาดใหญ่มากี่กิโล"],
+  en: ["How much is a room?", "What time is check-in?", "Can I bring my dog?",
+       "Is breakfast included?", "Is parking free?", "Do you offer airport pickup?"],
+};
+
+const logEl = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("q");
+const sendBtn = document.getElementById("send");
+const statusEl = document.getElementById("status");
+const samplesEl = document.getElementById("samples");
+
+let lang = "th";
+let busy = false;
+
+/* ---------- ภาษา ---------- */
+document.querySelectorAll(".seg button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    lang = btn.dataset.lang;
+    document.querySelectorAll(".seg button").forEach(b =>
+      b.setAttribute("aria-pressed", String(b === btn)));
+    input.placeholder = lang === "th"
+      ? "พิมพ์คำถาม แล้วกด Enter"
+      : "Type a question and press Enter";
+    renderSamples();
+  });
+});
+
+function renderSamples() {
+  samplesEl.innerHTML = "";
+  SAMPLES[lang].forEach(text => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = text;
+    b.addEventListener("click", () => { input.value = text; ask(text); });
+    samplesEl.appendChild(b);
+  });
+}
+
+/* ---------- สถานะเซิร์ฟเวอร์ ---------- */
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`);
+    if (!r.ok) throw new Error();
+    statusEl.textContent = "เชื่อมต่อแล้ว";
+    statusEl.className = "status ok";
+  } catch {
+    statusEl.textContent = "ต่อเซิร์ฟเวอร์ไม่ได้";
+    statusEl.className = "status down";
+  }
+}
+
+/* ---------- แสดงผล ---------- */
+function clearEmpty() {
+  const e = logEl.querySelector(".empty");
+  if (e) e.remove();
+}
+
+function addUser(text) {
+  clearEmpty();
+  const d = document.createElement("div");
+  d.className = "turn me";
+  d.innerHTML = `<div class="bubble"></div>`;
+  d.querySelector(".bubble").textContent = text;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function addPending() {
+  const d = document.createElement("div");
+  d.className = "turn bot";
+  d.innerHTML = `<div class="bubble"><span class="dots">กำลังคิด</span></div>`;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+  return d;
+}
+
+function fillAnswer(node, data, seconds) {
+  node.className = "turn bot" + (data.answered ? "" : " refused");
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = data.answer;
+
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  meta.innerHTML =
+    `<span class="tag ${data.answered ? "yes" : "no"}">` +
+    `answered: ${data.answered}</span>` +
+    `<span>score ${data.retrieval_score.toFixed(3)}</span>` +
+    `<span>conf ${data.confidence.toFixed(2)}</span>` +
+    `<span>${seconds.toFixed(1)} วินาที</span>`;
+
+  node.replaceChildren(bubble, meta);
+
+  if (data.sources && data.sources.length) {
+    const det = document.createElement("details");
+    det.className = "src";
+    const sum = document.createElement("summary");
+    sum.textContent = `ข้อมูลที่ใช้ตอบ ${data.sources.length} ชิ้น`;
+    const ol = document.createElement("ol");
+    data.sources.forEach(s => {
+      const li = document.createElement("li");
+      const code = document.createElement("code");
+      code.textContent = s.doc_id;
+      li.appendChild(code);
+      li.appendChild(document.createElement("br"));
+      li.appendChild(document.createTextNode(s.snippet));
+      ol.appendChild(li);
+    });
+    det.append(sum, ol);
+    node.appendChild(det);
+  }
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function fillError(node, message) {
+  node.className = "turn bot refused";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = "เรียก API ไม่สำเร็จ: " + message;
+  node.replaceChildren(bubble);
+}
+
+/* ---------- ยิงคำถาม ---------- */
+async function ask(text) {
+  if (busy || !text.trim()) return;
+  busy = true;
+  sendBtn.disabled = true;
+  input.value = "";
+
+  addUser(text);
+  const node = addPending();
+  const started = performance.now();
+
+  try {
+    const res = await fetch(`${API}/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: SESSION, message: text, language: lang }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    fillAnswer(node, await res.json(), (performance.now() - started) / 1000);
+  } catch (err) {
+    fillError(node, err.message);
+  } finally {
+    busy = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+form.addEventListener("submit", e => { e.preventDefault(); ask(input.value); });
+document.getElementById("clear").addEventListener("click", () => {
+  logEl.innerHTML = `<div class="empty">พิมพ์คำถามด้านล่าง หรือกดคำถามตัวอย่างเพื่อเริ่มทดสอบ</div>`;
+});
+
+renderSamples();
+checkHealth();
+input.focus();
+</script>
+</body>
+</html>
