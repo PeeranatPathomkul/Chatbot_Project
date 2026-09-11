@@ -8,11 +8,13 @@ title: Booking, Check-in, Check-out and Cancellation Policy
 
 ## Check-in and Check-out Times
 Check-in is from 2:00 PM onwards.
+The latest check-in accepted is 10:00 PM. If you will arrive after 10:00 PM,
+please call ahead on 081-598-1199.
 Check-out is before 12:00 noon on the day of departure.
-Early check-in: <<TODO: whether check-in before 2:00 PM is possible and whether there is a charge>>
+
+The resort does not accept check-in before 2:00 PM and does not offer luggage storage,
+so guests arriving before 2:00 PM cannot leave their bags at the resort.
 Late check-out: <<TODO: whether check-out after 12:00 noon is possible and the charge>>
-If you arrive before check-in time: <<TODO: whether luggage can be stored>>
-Late arrival: <<TODO: the latest time check-in is accepted, and whether you must call ahead>>
 
 ## Required Documents
 Guests must present: <<TODO: whether an original ID card or passport is required>>
@@ -20,13 +22,14 @@ Security deposit: <<TODO: whether a damage deposit is collected, and how much>>
 
 ## Booking and Payment
 Book by calling 081-598-1199 or messaging Facebook: Poonsuk Resort Sadao.
-A booking is only confirmed once the room deposit has been paid.
+A booking is only confirmed once the 200 THB deposit has been paid.
+Transfer the deposit to PromptPay number 081-599-3128.
 The balance is paid on the day of check-in.
-Deposit amount and transfer details are in the "Room Rates" section.
+The resort accepts bank transfer only — no cash and no credit cards.
 
 ## Cancellation Policy
 You may cancel at any time — there is no minimum notice period.
-However, the deposit you have paid is non-refundable in all cases.
+However, the 200 THB deposit you have paid is non-refundable in all cases.
 The resort does not refund deposits regardless of how far in advance you cancel.
 Please be certain of your dates before paying the deposit.
 

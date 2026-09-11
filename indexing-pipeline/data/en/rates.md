@@ -1,36 +1,32 @@
 ---
 category: ราคา
 language: en
-title: Room Rates, Promotions and Extra Charges
+title: Room Rates and Payment
 ---
 
 # Room Rates
 
 ## Room Rate
 The room rate is 650 THB per room per night.
-The rate is the same for both single-bed and twin-bed rooms.
+The rate is the same for the twin-bed rooms (P1-P4) and the single-bed rooms (F1-F2).
 It is also the same every day — weekdays and weekends alike, with no weekend surcharge.
 The rate is charged per room and covers 2 to 3 guests per room.
 
 The rate does not include breakfast, as the resort does not serve breakfast.
 <<TODO: whether the 650 THB rate already includes VAT>>
 
-## Promotion: Book 3 Rooms or 3 Nights
-Book 3 or more rooms, or stay 3 or more consecutive nights,
-and the rate drops to 600 THB per room per night instead of the usual 650 THB —
-a saving of 50 THB per room per night.
-<<TODO: how long this promotion runs, or whether it is permanent>>
-
 ## Extra Charges
 Extra bed: 200 THB per bed per night, available in any room.
-<<TODO: any other charges, such as early check-in or late check-out fees>>
+<<TODO: any other charges, such as a late check-out fee after 12:00 noon>>
 
 ## Payment and Deposit
-A booking is confirmed once the room deposit has been paid.
-Deposit amount: <<TODO: deposit amount in THB, or as a percentage of the total>>
-Deposit deadline: <<TODO: how soon after booking the deposit must be transferred>>
+A booking is only confirmed once the room deposit has been paid.
+Deposit: 200 THB.
+Transfer to PromptPay number 081-599-3128.
 The balance is paid on the day of check-in.
-Payment methods: <<TODO: cash, bank transfer, PromptPay or credit card — and the account details for transfers>>
+
+The resort accepts bank transfer only — no cash and no credit cards.
+Deposit deadline: <<TODO: how soon after booking the deposit must be transferred>>
 Receipts and tax invoices: <<TODO: whether these can be issued>>
 
 ## Not Included in the Rate

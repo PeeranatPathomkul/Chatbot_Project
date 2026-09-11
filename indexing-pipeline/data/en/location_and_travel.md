@@ -17,10 +17,9 @@ For directions, call 081-598-1199.
 
 ## Nearby Places
 The resort is close to the following:
-Khao Le — <<TODO: distance from the resort to Khao Le>>
-Sadao Market — <<TODO: distance from the resort to the market>>
-Lotus's Sadao — <<TODO: distance from the resort to Lotus's>>
-Sadao Halal Market — <<TODO: distance to the halal market, and which days it opens>>
+Sadao Market and Lotus's Sadao are about 5 minutes away by car.
+Khao Le and the Sadao Halal Market are also in the immediate area.
+Sadao Halal Market opening days: <<TODO: which days and hours the halal market opens>>
 
 ## From Town and the Border Checkpoint
 Sadao border checkpoint: <<TODO: distance and travel time from the resort to the Sadao border>>
@@ -43,6 +42,7 @@ Directions: <<TODO: route guidance for guests driving themselves, and easy-to-sp
 
 ## Restaurants and Shops Nearby
 The resort does not serve food, so guests eat off site.
+The market and Lotus's are about 5 minutes away by car.
 Nearest convenience store: <<TODO: store name and distance>>
 Recommended restaurants: <<TODO: recommended nearby restaurants with distances>>
 
