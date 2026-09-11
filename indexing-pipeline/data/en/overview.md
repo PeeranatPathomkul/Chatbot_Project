@@ -19,13 +19,15 @@ Best suited for: guests who want privacy and quiet, travellers visiting Sadao on
 and small families — each room sleeps 2 to 3 guests.
 
 ## Contact
-Phone: 081-598-1199
-Facebook: Poonsuk Resort Sadao
-The resort has no LINE Official account — contact is by phone and the Facebook page only.
-Email and website: <<TODO: whether there is a booking email or website>>
+You can reach the resort by
+Phone : 081-598-1199
+Facebook : Poonsuk Resort Sadao
 
-The easiest ways to book and ask questions are by phone at 081-598-1199 and on Facebook.
+Email and website: <<TODO: whether there is a booking email or website>>
 Front desk hours: <<TODO: front desk operating hours, e.g. 08:00-20:00>>
+
+## Unsupported Channels
+The resort has no LINE Official account
 
 ## Booking
 Book by calling 081-598-1199 or messaging Facebook: Poonsuk Resort Sadao.

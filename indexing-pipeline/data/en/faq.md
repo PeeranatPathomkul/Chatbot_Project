@@ -92,8 +92,13 @@ A: No. The resort is a small 6-room property focused on quiet and privacy, and h
 Q: Is there a restaurant at the resort?
 A: No. Guests can eat at the shops and markets nearby, about 5 minutes away by car.
 
-Q: Do you have LINE? How can I contact you?
-A: The resort does not have a LINE Official account. Contact us by phone on 081-598-1199 or through the Facebook page Poonsuk Resort Sadao.
+Q: How can I contact the resort?
+A: You can reach the resort by
+Phone : 081-598-1199
+Facebook : Poonsuk Resort Sadao
+
+Q: Do you have LINE?
+A: No, we don't.
 
 Q: Where is the resort located?
 A: At 53/33 Moo 11, Liap Khlong Tha Phru Road, Sadao Sub-district, Sadao District, Songkhla Province — close to Khao Le, the market, Lotus's and the Sadao Halal Market.
