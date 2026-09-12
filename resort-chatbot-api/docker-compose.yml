@@ -8,3 +8,6 @@ services:
     volumes:
       # persist ข้อมูล ChromaDB ไว้นอก container กันข้อมูลหายตอน rebuild
       - ./data:/app/data
+      # ฐานความรู้จริงที่ indexing-pipeline สร้างไว้ (ดู DEFAULT_CHROMA_PATH ใน app/config.py)
+      # mount แบบ read-only เพราะ API เป็นแค่ผู้อ่าน ไม่ได้เป็นคนเขียน collection นี้
+      - ../indexing-pipeline/chroma_db:/indexing-pipeline/chroma_db:ro
