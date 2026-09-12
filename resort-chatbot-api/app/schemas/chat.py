@@ -28,6 +28,12 @@ class SuggestedAction(BaseModel):
     url: str = ""
 
 
+class TokenUsage(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
 class ChatResponse(BaseModel):
     session_id: str
     answer: str
@@ -63,6 +69,10 @@ class ChatResponse(BaseModel):
         ),
     )
     suggested_action: SuggestedAction = Field(default_factory=SuggestedAction)
+    token_usage: TokenUsage | None = Field(
+        default=None,
+        description="จำนวน token ที่ใช้เรียก LLM รอบนี้ — None เมื่อไม่ได้เรียก LLM เลย (เช่น retrieval ว่างเปล่า)",
+    )
 
 
 class HealthResponse(BaseModel):

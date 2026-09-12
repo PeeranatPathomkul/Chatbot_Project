@@ -8,6 +8,7 @@ Interface กลางสำหรับเรียก LLM (LLMClient) พร�
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from functools import lru_cache
 
 import httpx
@@ -15,12 +16,19 @@ import httpx
 from app.config import settings
 
 
+@dataclass
+class LLMResult:
+    text: str
+    #: {"prompt_tokens", "completion_tokens", "total_tokens"} — None ถ้า provider ไม่คืนค่ามาให้
+    usage: dict[str, int] | None = None
+
+
 class LLMClient(ABC):
     """Interface กลางที่ทุก provider ต้อง implement"""
 
     @abstractmethod
-    async def generate(self, prompt: str, system: str | None = None) -> str:
-        """ส่ง prompt ไปยัง LLM แล้วคืนค่าคำตอบเป็นข้อความ
+    async def generate(self, prompt: str, system: str | None = None) -> LLMResult:
+        """ส่ง prompt ไปยัง LLM แล้วคืนคำตอบพร้อมจำนวน token ที่ใช้
 
         Args:
             prompt: ข้อความของผู้ใช้ (ข้อมูลอ้างอิง + คำถาม)
@@ -39,7 +47,7 @@ class TyphoonLLMClient(LLMClient):
         self.base_url = base_url or settings.typhoon_base_url
         self.model = model or settings.typhoon_model
 
-    async def generate(self, prompt: str, system: str | None = None) -> str:
+    async def generate(self, prompt: str, system: str | None = None) -> LLMResult:
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         messages = [{"role": "user", "content": prompt}]
         if system:
@@ -55,7 +63,19 @@ class TyphoonLLMClient(LLMClient):
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            usage = data.get("usage")
+            return LLMResult(
+                text=data["choices"][0]["message"]["content"],
+                usage=(
+                    {
+                        "prompt_tokens": usage["prompt_tokens"],
+                        "completion_tokens": usage["completion_tokens"],
+                        "total_tokens": usage["total_tokens"],
+                    }
+                    if usage
+                    else None
+                ),
+            )
 
 
 class GeminiLLMClient(LLMClient):
@@ -66,7 +86,7 @@ class GeminiLLMClient(LLMClient):
         self.model = model or settings.gemini_model
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
 
-    async def generate(self, prompt: str, system: str | None = None) -> str:
+    async def generate(self, prompt: str, system: str | None = None) -> LLMResult:
         url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
         payload: dict = {"contents": [{"parts": [{"text": prompt}]}]}
         if system:
@@ -76,7 +96,20 @@ class GeminiLLMClient(LLMClient):
             response = await client.post(url, json=payload)
             response.raise_for_status()
             data = response.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+            # ชื่อ field คนละชุดกับ OpenAI schema แต่ความหมายตรงกัน
+            usage = data.get("usageMetadata")
+            return LLMResult(
+                text=data["candidates"][0]["content"]["parts"][0]["text"],
+                usage=(
+                    {
+                        "prompt_tokens": usage["promptTokenCount"],
+                        "completion_tokens": usage["candidatesTokenCount"],
+                        "total_tokens": usage["totalTokenCount"],
+                    }
+                    if usage
+                    else None
+                ),
+            )
 
 
 @lru_cache

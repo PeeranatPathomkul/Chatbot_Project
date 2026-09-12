@@ -254,7 +254,11 @@ function fillAnswer(node, data, seconds) {
     `answered: ${data.answered}</span>` +
     `<span>score ${data.retrieval_score.toFixed(3)}</span>` +
     `<span>conf ${data.confidence.toFixed(2)}</span>` +
-    `<span>${seconds.toFixed(1)} วินาที</span>`;
+    `<span>${seconds.toFixed(1)} วินาที</span>` +
+    (data.token_usage
+      ? `<span>${data.token_usage.total_tokens} token ` +
+        `(${data.token_usage.prompt_tokens}+${data.token_usage.completion_tokens})</span>`
+      : "");
 
   node.replaceChildren(bubble, meta);
 

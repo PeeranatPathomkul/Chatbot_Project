@@ -5,7 +5,7 @@
 
 from app.config import settings
 from app.core.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, no_context_answer
-from app.schemas.chat import ChatResponse, Source, SuggestedAction
+from app.schemas.chat import ChatResponse, Source, SuggestedAction, TokenUsage
 from app.services.embedding_service import EmbeddingService, get_embedding_service
 from app.services.llm_client import LLMClient, get_llm_client
 from app.services.vector_store import VectorStore, get_vector_store
@@ -71,12 +71,12 @@ class RAGPipeline:
         user_prompt = USER_PROMPT_TEMPLATE.format(context=context_text, question=message)
 
         # 4. เรียก LLM เพื่อสร้างคำตอบ
-        answer_text = (
-            await self.llm_client.generate(
-                user_prompt,
-                system=SYSTEM_PROMPT.format(language=language, refusal=refusal),
-            )
-        ).strip()
+        llm_result = await self.llm_client.generate(
+            user_prompt,
+            system=SYSTEM_PROMPT.format(language=language, refusal=refusal),
+        )
+        answer_text = llm_result.text.strip()
+        token_usage = TokenUsage(**llm_result.usage) if llm_result.usage else None
 
         # 5. ประเมินว่าตอบได้จริงหรือปฏิเสธ
         #
@@ -111,6 +111,7 @@ class RAGPipeline:
             confidence=round(retrieval_score, 2) if answered else 0.0,
             retrieval_score=round(retrieval_score, 4),
             suggested_action=SuggestedAction(type="none", url=""),
+            token_usage=token_usage,
         )
 
 

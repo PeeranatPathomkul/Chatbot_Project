@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from app.core.prompts import NO_CONTEXT_ANSWER
 from app.main import app
 from app.services.embedding_service import get_embedding_service
-from app.services.llm_client import get_llm_client
+from app.services.llm_client import LLMResult, get_llm_client
 from app.services.rag_pipeline import RAGPipeline, get_rag_pipeline
 from app.services.vector_store import get_vector_store
 
@@ -41,7 +41,10 @@ def build_client(llm_answer: str) -> TestClient:
     ]
 
     mock_llm_client = AsyncMock()
-    mock_llm_client.generate.return_value = llm_answer
+    mock_llm_client.generate.return_value = LLMResult(
+        text=llm_answer,
+        usage={"prompt_tokens": 120, "completion_tokens": 30, "total_tokens": 150},
+    )
 
     app.dependency_overrides[get_embedding_service] = lambda: mock_embedding_service
     app.dependency_overrides[get_vector_store] = lambda: mock_vector_store
@@ -97,6 +100,11 @@ def test_query_returns_answer_from_mocked_llm(client: TestClient):
     assert len(data["sources"]) == 1
     assert data["sources"][0]["doc_id"] == "th-booking_policy::0000"
     assert 0.0 <= data["confidence"] <= 1.0
+    assert data["token_usage"] == {
+        "prompt_tokens": 120,
+        "completion_tokens": 30,
+        "total_tokens": 150,
+    }
 
 
 def test_ไม่ต้องส่ง_resort_id_ก็เรียกได้(client: TestClient):
@@ -171,3 +179,5 @@ def test_เมื่อปฏิเสธ_confidence_ต้องเป็น�
     assert data["sources"] == []
     # แต่คะแนนดิบต้องยังเก็บไว้ให้ debug ได้ว่า retrieval ดึงอะไรมา
     assert data["retrieval_score"] > 0.0
+    # token ถูกใช้จริงแม้โมเดลจะปฏิเสธ (มันยังคง generate คำตอบปฏิเสธออกมา) จึงต้องรายงานด้วย
+    assert data["token_usage"]["total_tokens"] > 0
