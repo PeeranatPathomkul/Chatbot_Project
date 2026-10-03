@@ -35,7 +35,7 @@ The resort does not refund deposits regardless of how far in advance you cancel.
 Please be certain of your dates before paying the deposit.
 
 ## Date Changes
-<<TODO: whether dates can be changed, how much notice is required, and whether the deposit carries over>>
+Changing your stay dates: <<TODO: whether dates can be changed, how much notice is required, and whether the deposit carries over>>
 
 ## Pet Policy
 The resort does not accept pets. Animals of any kind and any size, including dogs and cats,

@@ -54,7 +54,11 @@ class ChatResponse(BaseModel):
         ge=0.0,
         le=1.0,
         description=(
-            "ความมั่นใจของคำตอบ (0.0 เมื่อ answered=false) "
+            "ความมั่นใจของคำตอบ: 1.0 เมื่อตอบจากข้อมูลสดของระบบจอง "
+            "(ข้อมูลจริง ไม่ใช่การเดาจากความใกล้เคียงของเวกเตอร์), "
+            "เท่ากับ retrieval_score เมื่อตอบจากคลังความรู้อย่างเดียว, "
+            "และ 0.0 เมื่อปฏิเสธหรือเมื่อคำตอบไม่ได้อิงข้อมูลจากที่ใดเลย "
+            "เช่น ตอบว่าต้องเข้าสู่ระบบก่อน "
             "เตือน: ค่านี้ไม่ใช่เครื่องตรวจจับการแต่งข้อมูล ให้ดู answered เป็นหลัก"
         ),
     )
@@ -69,6 +73,15 @@ class ChatResponse(BaseModel):
         ),
     )
     suggested_action: SuggestedAction = Field(default_factory=SuggestedAction)
+    tools_used: list[str] = Field(
+        default_factory=list,
+        description=(
+            "ชื่อ tool ที่โมเดลเรียกในรอบนี้ เรียงตามลำดับที่เรียกจริง "
+            "เช่น ['search_available_rooms', 'search_knowledge_base'] "
+            "ว่างเปล่าแปลว่าโมเดลตอบโดยไม่ได้ดึงข้อมูลจากที่ไหนเลย ซึ่งเป็นสัญญาณอันตราย "
+            "สำหรับคำถามเรื่องราคาหรือห้องว่าง — มีไว้ debug และ monitor เท่านั้น"
+        ),
+    )
     token_usage: TokenUsage | None = Field(
         default=None,
         description="จำนวน token ที่ใช้เรียก LLM รอบนี้ — None เมื่อไม่ได้เรียก LLM เลย (เช่น retrieval ว่างเปล่า)",

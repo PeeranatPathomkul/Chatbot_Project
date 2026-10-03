@@ -27,6 +27,17 @@ async def chat_ui() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/demo", include_in_schema=False)
+async def demo_site() -> FileResponse:
+    """หน้าเว็บตัวอย่างพร้อมวิดเจ็ตแชทมุมขวาล่าง — มุมมองแบบที่ลูกค้าเห็นจริง
+
+    ต่างจากหน้า / ตรงที่ไม่มีข้อมูล debug (tool ที่เรียก, score, token) ให้เห็น
+    เสิร์ฟจาก FastAPI เองเพื่อให้เป็น same-origin กับ API เหมือนหน้าทดสอบ
+    ถ้าจะเอาวิดเจ็ตไปฝังบนเว็บจริงคนละโดเมน ต้องเปิด CORS ที่แอปนี้ก่อน
+    """
+    return FileResponse(STATIC_DIR / "demo.html")
+
+
 @app.get("/ping", include_in_schema=False)
 async def ping() -> dict[str, str]:
     """เช็คว่าแอปยังตอบอยู่ (health check ของ chatbot อยู่ที่ /api/v1/chatbot/health)"""

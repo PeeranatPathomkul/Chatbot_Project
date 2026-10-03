@@ -17,6 +17,8 @@
 | Vector database | ChromaDB (embedded, อ่านจาก `../indexing-pipeline/chroma_db`) |
 | Embedding model | sentence-transformers (`intfloat/multilingual-e5-base`, รันโลคัลฟรี) |
 | LLM | Typhoon API `typhoon-v2.5-30b-a3b-instruct`, สลับไป Gemini ได้ผ่าน `LLMClient` interface |
+| ข้อมูลสด (ห้องว่าง ราคา การจอง) | Booking API (NestJS + PostgreSQL) เรียกผ่าน HTTP |
+| การเลือกแหล่งข้อมูล | tool calling — โมเดลเลือกเองว่าจะถามระบบจองหรือคลังความรู้ |
 | RAG orchestration | LangChain text splitter |
 | Testing | Pytest |
 | Deployment | Docker / docker-compose, deploy ได้บน Render free tier |
@@ -36,8 +38,11 @@ resort-chatbot-api/
 │   │   ├── embedding_service.py
 │   │   ├── vector_store.py
 │   │   ├── llm_client.py
-│   │   └── rag_pipeline.py
-│   ├── core/prompts.py
+│   │   ├── booking_api.py       # client เรียก Booking API (ไม่ต่อ PostgreSQL ตรง)
+│   │   └── rag_pipeline.py      # ลูป tool calling (ชื่อเดิม เนื้อในเป็น agent แล้ว)
+│   ├── core/
+│   │   ├── prompts.py
+│   │   └── tools.py             # นิยาม tool + ตัวรัน (ToolExecutor)
 │   └── static/index.html         # หน้าเว็บทดสอบแชท (เสิร์ฟที่ /)
 ├── data/sample_knowledge.csv
 ├── scripts/ingest.py
@@ -127,23 +132,48 @@ uvicorn app.main:app --reload
 
 ## ลำดับการทำงานภายใน (เกิดอะไรขึ้นเมื่อมีคำถามเข้ามา)
 
+แชทบอทไม่ได้ค้นคลังความรู้ก่อนเสมออีกต่อไป แต่ให้โมเดลเลือกเองว่าจะถามที่ไหน
+เพราะคำถามจริงมักต้องใช้สองแหล่งต่อกัน เช่น "ห้องเงียบ ๆ เสาร์นี้ว่างไหม ราคาเท่าไหร่"
+
 ```
-POST /api/v1/chatbot/query
+POST /api/v1/chatbot/query   (Authorization: Bearer <token ของลูกค้า> ถ้ามี)
   │
-  ├─ 1. embed_query()      แปลงคำถามเป็นเวกเตอร์ 768 มิติ (เติม prefix "query: " ให้เอง)
+  ├─ 1. ประกอบ messages     กติกา + วันที่วันนี้ -> system role
+  │                         คำถามของลูกค้า -> user role
+  │                         (การแยกนี้คือสิ่งที่กันไม่ให้โมเดลแต่งคำตอบ)
   │
-  ├─ 2. vector_store.query()  ค้นหา top-3 chunk ที่ใกล้ที่สุดด้วย cosine
-  │                           กรองด้วย language ที่ลูกค้าส่งมา (th / en)
+  ├─ 2. llm_client.generate(messages, tools)   โมเดลเลือกเรียก tool
+  │        ├─ search_available_rooms  -> Booking API (ห้องว่างจริง + ราคาจาก DB)
+  │        ├─ search_knowledge_base   -> ChromaDB (นโยบาย ค่าเตียงเสริม การเดินทาง)
+  │        ├─ get_payment_info        -> Booking API
+  │        ├─ list_restaurants        -> Booking API
+  │        └─ get_my_bookings /
+  │           get_booking_payment     -> Booking API (ต้องมี token ของลูกค้า)
   │
-  ├─ 3. ประกอบ prompt      กติกา -> system role
-  │                        ข้อมูลอ้างอิง + คำถาม -> user role
-  │                        (การแยกนี้คือสิ่งที่กันไม่ให้โมเดลแต่งคำตอบ)
+  ├─ 3. วนกลับไปข้อ 2       ยัดผลของ tool กลับเข้า messages แล้วถามโมเดลอีกรอบ
+  │                         สูงสุด AGENT_MAX_TOOL_ROUNDS รอบ รอบสุดท้ายไม่ส่ง tools
+  │                         เพื่อบังคับให้สรุปเป็นข้อความ
   │
-  ├─ 4. llm_client.generate()  เรียก Typhoon API
-  │
-  └─ 5. ประเมินผล          ถ้าโมเดลตอบด้วยประโยคปฏิเสธ -> answered=false,
+  └─ 4. ประเมินผล          ถ้าโมเดลตอบด้วยประโยคปฏิเสธ -> answered=false,
                            confidence=0, sources=[]
 ```
+
+**เส้นแบ่งว่าข้อมูลไหนเป็นของใคร**
+
+| ข้อมูล | เจ้าของ | เหตุผล |
+|---|---|---|
+| ห้องว่าง ราคาห้อง ชื่อห้อง capacity สิ่งอำนวยความสะดวกในห้อง | Booking API (PostgreSQL) | เปลี่ยนได้ตลอด staff แก้ที่เดียว |
+| ค่าเตียงเสริม มัดจำ นโยบายยกเลิก เวลาเช็คอิน การเดินทาง | ChromaDB | ไม่มีใน DB |
+
+ราคาถูกถอดออกจาก `../indexing-pipeline/data/**.md` หมดแล้ว **อย่าเติมกลับเข้าไป** ไม่งั้น
+จะมีราคาสองแหล่งที่ขัดกันเอง แล้วบอทจะเสนอราคาที่ไม่ตรงกับที่ลูกค้าจองจริงได้
+
+**ทำไมไม่ต่อ PostgreSQL ตรง ๆ** — "ห้องว่างไหม" ไม่ใช่ค่าที่เก็บอยู่ในตาราง แต่เป็นผลที่
+API คำนวณจาก booking ที่มีอยู่ด้วยกติกาช่วงวันที่แบบ half-open `[checkIn, checkOut)`
+บวกกับ hold window ที่ auto-cancel booking ที่ยังไม่จ่ายเงิน การเขียน query เองคือการ
+เลียนแบบกติกาชุดนั้นให้ตรงไปตลอด ซึ่งพลาดเมื่อไหร่บอทจะบอกว่าห้องว่างทั้งที่มีคนจองแล้ว
+อีกข้อคือ API บังคับให้ตัวตนลูกค้ามาจาก JWT เท่านั้น ส่วนการต่อ DB ตรงไม่มีอะไรกั้น
+ไม่ให้อ่าน booking ของลูกค้าคนอื่น
 
 **เวลาที่ใช้จริง:** คำถามแรก ~7 วินาที (โหลดโมเดล embedding เข้าหน่วยความจำ)
 คำถามถัดไป ~0.7-1.0 วินาที
@@ -221,8 +251,8 @@ curl -X POST http://127.0.0.1:8000/api/v1/chatbot/query ^
 | `answered` | ตอบได้จากข้อมูลจริง หรือปฏิเสธ | **ใช้ตัวนี้เป็นหลัก** — `false` ให้แสดงปุ่มโทรหารีสอร์ท |
 | `answer` | ข้อความคำตอบ | แสดงให้ลูกค้า |
 | `sources` | chunk ที่ใช้ตอบ | แสดงเป็นแหล่งอ้างอิงได้ ว่างเสมอเมื่อ `answered=false` |
-| `confidence` | 0.0 เมื่อปฏิเสธ นอกนั้นเท่ากับ `retrieval_score` | ใช้เรียงลำดับได้ แต่**ห้ามใช้ตัดสินว่าคำตอบเชื่อถือได้ไหม** |
-| `retrieval_score` | cosine similarity ดิบของ chunk อันดับ 1 | debug และ monitor เท่านั้น |
+| `confidence` | 1.0 เมื่อตอบจากข้อมูลสดของระบบจอง, เท่ากับ `retrieval_score` เมื่อตอบจากคลังความรู้, 0.0 เมื่อปฏิเสธ | ใช้เรียงลำดับได้ แต่**ห้ามใช้ตัดสินว่าคำตอบเชื่อถือได้ไหม** |
+| `retrieval_score` | cosine similarity ดิบของ chunk ที่ดีที่สุด — 0.0 เมื่อไม่ได้ค้นคลังความรู้เลย | debug และ monitor เท่านั้น |
 
 > **อย่าตั้ง threshold จาก `retrieval_score`**
 > วัดจริงแล้วคำถามที่ระบบ*ไม่มี*คำตอบได้คะแนนเฉลี่ย 0.835
@@ -236,11 +266,14 @@ curl -X POST http://127.0.0.1:8000/api/v1/chatbot/query ^
 pytest
 ```
 
-Test ใน `tests/test_chat_api.py` mock ทั้ง `EmbeddingService`, `VectorStore` และ `LLMClient` ไว้ทั้งหมด
-จึงไม่มีการยิง API จริงหรือโหลดโมเดล embedding จริงตอนรัน test (9 เทสต์ ~8 วินาที)
+Test ใน `tests/test_chat_api.py` mock ทั้ง `EmbeddingService`, `VectorStore`, `LLMClient`
+และ `BookingAPIClient` ไว้ทั้งหมด จึงไม่มีการยิง API จริงหรือโหลดโมเดล embedding จริง
+ตอนรัน test (15 เทสต์ ~5 วินาที)
 
-เทสต์ที่สำคัญที่สุดคือ `test_กติกาถูกส่งแยกเป็น_system_ไม่ใช่ยัดรวมกับคำถาม`
-ถ้าเทสต์นี้แดง แปลว่ากลไกกันการแต่งคำตอบหลุด ต้องแก้ก่อน deploy
+เทสต์ที่ห้ามปล่อยให้แดง:
+- `test_กติกาถูกส่งแยกเป็น_system_ไม่ใช่ยัดรวมกับคำถาม` — กลไกกันการแต่งคำตอบ
+- `test_ห้ามส่ง_guests_ต่อเข้า_booking_api` — `?guests=3` จะกรองห้องจริงทิ้งทั้งหมด
+- `test_ถามการจองของตัวเองโดยไม่ได้ล็อกอินต้องไม่หลุดข้อมูลใคร` — กันข้อมูลลูกค้าคนอื่นรั่ว
 
 ## รันด้วย Docker
 
@@ -265,7 +298,9 @@ docker compose up --build
 
 ## ขั้นตอนต่อไป (ยังไม่ได้ทำในโครงนี้)
 
-- เติม knowledge base จริงแทนข้อมูลตัวอย่าง
+- เติม knowledge base จริงแทนข้อมูลตัวอย่าง (ยังมี placeholder `<<รอเติม: ...>>` ค้างอยู่ 86 จุด
+  ซึ่งทำให้บอทปฏิเสธคำถามที่ตรงกับหัวข้อนั้น)
+- write endpoint (สร้าง/ยกเลิกการจอง) — ตอนนี้บอทอ่านอย่างเดียว ถ้าจะเปิดต้องมีขั้นยืนยันจากคน
 - เพิ่มระบบ authentication/authorization สำหรับ endpoint `/api/v1/knowledge`
 - เพิ่ม logging และ observability
 - ปรับปรุงการคำนวณ `confidence` ให้แม่นยำขึ้น

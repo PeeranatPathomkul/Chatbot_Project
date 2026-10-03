@@ -5,6 +5,16 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    # Booking API รันอยู่นอก compose stack นี้ (อยู่ใน stack ของ backend)
+    # จึงต้องเปิดทางให้ container คุยกลับออกไปหาโฮสต์ได้
+    # ทางเลือกอื่นคือต่อสองสแตกเข้า network เดียวกันแล้วเรียกด้วยชื่อ service แทน
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # ตั้งทับค่าใน .env เฉพาะตอนรันใน container
+      # .env เก็บเป็น localhost ไว้สำหรับตอนรัน uvicorn บนเครื่องตรง ๆ
+      # ส่วนใน container คำว่า localhost หมายถึงตัว container เอง จึงต้องชี้ออกไปที่โฮสต์
+      BOOKING_API_BASE_URL: http://host.docker.internal:3000/api
     volumes:
       # persist ข้อมูล ChromaDB ไว้นอก container กันข้อมูลหายตอน rebuild
       - ./data:/app/data

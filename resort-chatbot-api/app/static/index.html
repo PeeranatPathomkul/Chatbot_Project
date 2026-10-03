@@ -92,6 +92,18 @@
   .tag { padding: 1px 7px; border-radius: 99px; border: 1px solid var(--line); }
   .tag.yes { color: var(--brand); border-color: var(--brand); }
   .tag.no { color: var(--warn-text); border-color: var(--warn-line); }
+  .tag.tool { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
+  .tag.tool.kb { color: var(--muted); border-color: var(--line); background: transparent; }
+  .tag.none { color: var(--warn-text); border-color: var(--warn-line); }
+
+  details.auth { margin-bottom: 12px; font-size: 13px; }
+  details.auth summary { cursor: pointer; color: var(--muted); }
+  details.auth .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  details.auth input {
+    padding: 7px 10px; font-size: 13px; font-family: inherit; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--panel); color: var(--text); min-width: 170px;
+  }
+  details.auth .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
   details.src { margin-top: 6px; font-size: 13px; }
   details.src summary { cursor: pointer; color: var(--muted); font-size: 12px; }
@@ -129,6 +141,7 @@
     <span class="sub">พูนสุข รีสอร์ท สะเดา</span>
     <span class="spacer"></span>
     <span class="status" id="status">กำลังตรวจสอบ…</span>
+    <span class="status" id="bookingStatus">ระบบจอง…</span>
   </header>
 
   <div class="controls">
@@ -138,6 +151,22 @@
     </div>
     <button type="button" class="ghost" id="clear">ล้างบทสนทนา</button>
   </div>
+
+  <details class="auth">
+    <summary id="authSummary">เข้าสู่ระบบ (ไม่บังคับ — ใช้เฉพาะตอนถามถึงการจองของตัวเอง)</summary>
+    <div class="row">
+      <input id="email" type="email" placeholder="อีเมล" autocomplete="username">
+      <input id="password" type="password" placeholder="รหัสผ่าน" autocomplete="current-password">
+      <button type="button" class="ghost" id="loginBtn">เข้าสู่ระบบ</button>
+      <button type="button" class="ghost" id="logoutBtn">ออกจากระบบ</button>
+      <span id="authMsg" class="hint"></span>
+    </div>
+    <div class="hint">
+      ล็อกอินกับระบบจองโดยตรงเพื่อเอา access token มาแนบใน header ตอนถามแชทบอท
+      ถ้าไม่ล็อกอิน คำถามเรื่องห้องว่าง ราคา และนโยบายก็ยังถามได้ตามปกติ
+      ต่างกันแค่ถามถึงการจองของตัวเองไม่ได้
+    </div>
+  </details>
 
   <div class="samples" id="samples"></div>
 
@@ -149,7 +178,13 @@
   </form>
 
   <p class="note">
-    กรอบสีส้มคือคำตอบที่บอท <b>ปฏิเสธ</b> เพราะไม่มีข้อมูลในคลัง — ไม่ใช่ข้อผิดพลาด
+    <b>ป้ายสีเขียวใต้คำตอบคือ tool ที่บอทเรียกจริง</b> ใช้ตรวจว่าคำตอบมาจากไหน
+    <code>search_available_rooms</code> = ดึงสด จาก PostgreSQL ผ่านระบบจอง,
+    <code>search_knowledge_base</code> = ค้นจากคลังความรู้
+    ถ้าถามเรื่องราคาหรือห้องว่างแล้ว<b>ไม่มีป้าย tool เลย</b> แปลว่าบอทตอบจากความจำ
+    ซึ่งผิด ต้องแจ้งให้แก้
+    <br><br>
+    กรอบสีส้มคือคำตอบที่บอท <b>ปฏิเสธ</b> เพราะไม่มีข้อมูล — ไม่ใช่ข้อผิดพลาด
     แต่เป็นพฤติกรรมที่ต้องการ ให้ดู <b>answered</b> เป็นหลัก ไม่ใช่ <b>score</b>
     เพราะคำถามที่ระบบไม่มีคำตอบก็ได้ score สูงราว 0.83 พอ ๆ กับคำถามที่ตอบได้
   </p>
@@ -158,14 +193,19 @@
 
 <script>
 const API = "/api/v1/chatbot";
+// ระบบจองอยู่คนละพอร์ต หน้านี้เรียกตรงเฉพาะตอนล็อกอินเพื่อเอา token เท่านั้น
+// คำถามทุกอย่างยังยิงผ่านแชทบอท ไม่ได้ข้ามไปถามระบบจองเอง
+const BOOKING_API = "http://localhost:3000/api";
 const SESSION = "ui-" + Math.random().toString(36).slice(2, 10);
 
 const SAMPLES = {
-  th: ["ห้องพักคืนละเท่าไหร่", "เช็คอินกี่โมง", "พาหมามาได้ไหม", "ห้อง P2 เป็นเตียงแบบไหน",
-       "มัดจำกี่บาท โอนเข้าเบอร์ไหน", "ที่จอดรถจอดได้กี่คัน", "มีอาหารเช้าไหม",
-       "จากสนามบินหาดใหญ่มากี่กิโล"],
-  en: ["How much is a room?", "What time is check-in?", "Can I bring my dog?",
-       "Is breakfast included?", "Is parking free?", "Do you offer airport pickup?"],
+  th: ["พรุ่งนี้มีห้องว่างไหม ราคาเท่าไหร่", "มา 3 คน พักห้องเดียวได้ไหม รวมเท่าไหร่",
+       "มา 10 คน ต้องจองกี่ห้อง", "ห้อง P2 เป็นเตียงแบบไหน", "เสาร์นี้ว่างไหม",
+       "เช็คอินกี่โมง", "มัดจำกี่บาท โอนเข้าเบอร์ไหน", "พาหมามาได้ไหม",
+       "ฉันจองอะไรไว้บ้าง", "จากสนามบินหาดใหญ่มากี่กิโล"],
+  en: ["Any rooms free tomorrow? How much?", "Can 3 people share one room?",
+       "What time is check-in?", "Can I bring my dog?", "What have I booked?",
+       "How far is Hat Yai airport?"],
 };
 
 const logEl = document.getElementById("log");
@@ -177,6 +217,8 @@ const samplesEl = document.getElementById("samples");
 
 let lang = "th";
 let busy = false;
+let token = null;
+try { token = localStorage.getItem("poonsuk_token"); } catch { /* private mode */ }
 
 /* ---------- ภาษา ---------- */
 document.querySelectorAll(".seg button").forEach(btn => {
@@ -202,6 +244,50 @@ function renderSamples() {
   });
 }
 
+/* ---------- เข้าสู่ระบบ ---------- */
+const authMsg = document.getElementById("authMsg");
+const authSummary = document.getElementById("authSummary");
+
+function renderAuth() {
+  authSummary.textContent = token
+    ? "เข้าสู่ระบบแล้ว — ถามถึงการจองของตัวเองได้"
+    : "เข้าสู่ระบบ (ไม่บังคับ — ใช้เฉพาะตอนถามถึงการจองของตัวเอง)";
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  if (!email || !password) { authMsg.textContent = "กรอกอีเมลและรหัสผ่านก่อน"; return; }
+  authMsg.textContent = "กำลังเข้าสู่ระบบ…";
+  try {
+    const res = await fetch(`${BOOKING_API}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    token = data.accessToken;
+    try { localStorage.setItem("poonsuk_token", token); } catch { /* private mode */ }
+    authMsg.textContent = `เข้าสู่ระบบแล้วในชื่อ ${data.user?.name || email}`;
+    document.getElementById("password").value = "";
+    renderAuth();
+  } catch (err) {
+    // access token อายุ 15 นาที ถ้าใช้ไปนาน ๆ แล้วเจอ 401 ให้ล็อกอินใหม่
+    authMsg.textContent = "เข้าสู่ระบบไม่สำเร็จ: " + err.message;
+  }
+}
+
+function logout() {
+  token = null;
+  try { localStorage.removeItem("poonsuk_token"); } catch { /* private mode */ }
+  authMsg.textContent = "ออกจากระบบแล้ว";
+  renderAuth();
+}
+
+document.getElementById("loginBtn").addEventListener("click", login);
+document.getElementById("logoutBtn").addEventListener("click", logout);
+
 /* ---------- สถานะเซิร์ฟเวอร์ ---------- */
 async function checkHealth() {
   try {
@@ -212,6 +298,20 @@ async function checkHealth() {
   } catch {
     statusEl.textContent = "ต่อเซิร์ฟเวอร์ไม่ได้";
     statusEl.className = "status down";
+  }
+}
+
+async function checkBooking() {
+  const el = document.getElementById("bookingStatus");
+  try {
+    // payment/info เป็น endpoint สาธารณะที่เบาที่สุด ใช้เช็คว่าระบบจองยังตอบอยู่
+    const r = await fetch(`${BOOKING_API}/payment/info`);
+    if (!r.ok) throw new Error();
+    el.textContent = "ระบบจอง: พร้อม";
+    el.className = "status ok";
+  } catch {
+    el.textContent = "ระบบจอง: ต่อไม่ได้";
+    el.className = "status down";
   }
 }
 
@@ -262,6 +362,24 @@ function fillAnswer(node, data, seconds) {
 
   node.replaceChildren(bubble, meta);
 
+  // ป้าย tool คือสิ่งที่บอกว่าคำตอบมาจากไหนจริง ๆ สำคัญกว่าคะแนนทุกตัวในแถวบน
+  const tools = document.createElement("div");
+  tools.className = "meta";
+  if (data.tools_used && data.tools_used.length) {
+    data.tools_used.forEach(name => {
+      const t = document.createElement("span");
+      t.className = "tag tool" + (name === "search_knowledge_base" ? " kb" : "");
+      t.textContent = name;
+      tools.appendChild(t);
+    });
+  } else {
+    const t = document.createElement("span");
+    t.className = "tag none";
+    t.textContent = "ไม่ได้เรียก tool เลย";
+    tools.appendChild(t);
+  }
+  node.appendChild(tools);
+
   if (data.sources && data.sources.length) {
     const det = document.createElement("details");
     det.className = "src";
@@ -303,9 +421,13 @@ async function ask(text) {
   const started = performance.now();
 
   try {
+    const headers = { "Content-Type": "application/json" };
+    // token ถูกแนบโดยหน้าเว็บ ไม่ใช่ field ใน body — โมเดลจึงแตะต้องมันไม่ได้
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const res = await fetch(`${API}/query`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ session_id: SESSION, message: text, language: lang }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -325,7 +447,9 @@ document.getElementById("clear").addEventListener("click", () => {
 });
 
 renderSamples();
+renderAuth();
 checkHealth();
+checkBooking();
 input.focus();
 </script>
 </body>

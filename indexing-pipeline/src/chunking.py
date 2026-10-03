@@ -330,7 +330,7 @@ def chunk_document(
     splitter = create_splitter(chunk_size, chunk_overlap)
     chunks: list[Chunk] = []
 
-    body = strip_placeholder_lines(strip_editor_notes(document.body))
+    body = mask_placeholder_lines(strip_editor_notes(document.body))
     for heading, section_text in split_into_sections(body):
         for piece in splitter.split_text(section_text):
             piece = piece.strip()
@@ -411,7 +411,7 @@ def find_placeholders(documents: list[SourceDocument]) -> list[tuple[str, str]]:
     """หา placeholder ``<<...>>`` ที่ยังค้างอยู่ใน **เอกสารต้นฉบับ**
 
     ต้องอ่านจากเอกสารต้นฉบับ ไม่ใช่จาก chunk เพราะ ``chunk_document`` ตัดบรรทัดที่มี
-    placeholder ทิ้งไปแล้ว (ดู ``strip_placeholder_lines``) ถ้าไปนับจาก chunk จะได้ 0 เสมอ
+    placeholder ถูกแทนที่ไปแล้ว (ดู ``mask_placeholder_lines``) ถ้าไปนับจาก chunk จะได้ 0 เสมอ
 
     Returns:
         list ของ (ชื่อไฟล์, placeholder ที่เจอ) — หนึ่งรายการต่อหนึ่ง placeholder
@@ -423,25 +423,46 @@ def find_placeholders(documents: list[SourceDocument]) -> list[tuple[str, str]]:
     return found
 
 
-def strip_placeholder_lines(body: str) -> str:
-    """ตัดบรรทัดที่ยังมี placeholder ``<<...>>`` ออกก่อนนำไป chunk
+#: ข้อความที่ใช้แทนช่องว่างที่รีสอร์ทยังไม่ได้ให้ข้อมูล
+#: ต้องเป็นประโยคบอกเล่าที่ชัดเจน ไม่ใช่ช่องว่าง เพื่อให้ LLM มีอะไรให้อ้างตอนปฏิเสธ
+_MISSING_DATA_TEXT = "ยังไม่ได้รับข้อมูลจากรีสอร์ท ไม่มีข้อมูลเรื่องนี้ในระบบ"
+
+
+def mask_placeholder_lines(body: str) -> str:
+    """แทนที่ placeholder ``<<...>>`` ด้วยประโยคที่บอกตรง ๆ ว่าไม่มีข้อมูล
 
     **เหตุผล (วัดจากการทดลองจริงกับ Typhoon):**
-    ตอนแรกเราปล่อยให้ placeholder ติดไปกับ chunk แล้วหวังว่า LLM จะเห็นแล้วรู้ว่า
+    เวอร์ชันแรกปล่อยให้ placeholder ติดไปกับ chunk แล้วหวังว่า LLM จะเห็นแล้วรู้ว่า
     "ไม่มีข้อมูล" แต่ผลจริงตรงกันข้าม — LLM เอา **ข้อความใบ้ข้างใน placeholder**
     ไปตอบเป็นข้อเท็จจริง เช่น
 
         context : รหัสผ่าน Wi-Fi: <<รอเติม: รับรหัสได้ที่ไหน หรือแจ้งตอนเช็คอิน>>
         คำตอบ   : "รับรหัสได้ที่แผนกต้อนรับตอนเช็คอิน"    <-- แต่งขึ้นจากคำใบ้
 
-    อาการนี้จับได้ยากกว่าการพ่น "<<รอเติม: ...>>" ออกมาตรง ๆ มาก เพราะคำตอบดูสมเหตุสมผล
-    การตัดทิ้งทำให้ไม่มีบรรทัดนั้นใน context เลย LLM จึงตอบว่าไม่มีข้อมูลได้ถูกต้อง
+    เวอร์ชันที่สองจึงตัดทิ้งทั้งบรรทัด ซึ่งแก้อาการนั้นได้ แต่สร้างอาการใหม่ที่เจอทีหลัง:
+    พอบรรทัดหายไป chunk ที่เหลือกลายเป็นหัวข้อที่พูดถึงเรื่องนั้นแต่ไม่มีคำตอบ
+    LLM ก็เติมให้เองจากความรู้ทั่วไปแทน
 
-    ตัด **ทั้งบรรทัด** ไม่ใช่แค่ช่วง ``<<...>>`` เพราะถ้าเหลือแต่หัวข้อค้างไว้
-    (เช่น "รถรับส่ง:") LLM ก็ยังเติมคำตอบต่อท้ายให้อยู่ดี
-    ผลข้างเคียงคือถ้าบรรทัดหนึ่งมีทั้งข้อมูลจริงและ placeholder ปนกัน ข้อมูลจริงจะหายไปด้วย
-    ซึ่งยอมรับได้ เพราะข้อมูลขาดยังดีกว่าข้อมูลที่ถูกแต่งขึ้น
+        chunk  : "สนามบินที่ใกล้ที่สุดคือสนามบินนานาชาติหาดใหญ่"   (บรรทัดระยะทางถูกตัดไป)
+        ถาม    : "จากสนามบินหาดใหญ่มากี่กิโล"
+        คำตอบ  : "ประมาณ 15-20 กิโลเมตร ใช้เวลา 20-30 นาที"       <-- ไม่มีตัวเลขนี้ในคลังเลย
+
+    เวอร์ชันนี้เอาข้อดีของทั้งสองทาง: **เก็บหัวข้อไว้ ทิ้งคำใบ้ แล้วเติมประโยคปฏิเสธ**
+    ได้บรรทัดที่ยืนยันชัดเจนว่าไม่มีข้อมูล โดยไม่มีคำใบ้ให้ LLM หยิบไปแต่ง
+
+        ก่อน : ระยะทางและเวลาเดินทาง: <<รอเติม: ระยะทางจากสนามบินหาดใหญ่>>
+        หลัง : ระยะทางและเวลาเดินทาง: ยังไม่ได้รับข้อมูลจากรีสอร์ท ไม่มีข้อมูลเรื่องนี้ในระบบ
+
+    บรรทัดที่เป็น placeholder ล้วน ๆ ไม่มีหัวข้อนำหน้า จะถูกตัดทิ้งเหมือนเดิม
+    เพราะเหลือแต่ประโยคปฏิเสธลอย ๆ ที่ไม่บอกว่าปฏิเสธเรื่องอะไร
     """
-    return "\n".join(
-        line for line in body.splitlines() if not _PLACEHOLDER_RE.search(line)
-    )
+    kept: list[str] = []
+    for line in body.splitlines():
+        if not _PLACEHOLDER_RE.search(line):
+            kept.append(line)
+            continue
+        # ตัดเฉพาะช่วง <<...>> ออก เหลือไว้แต่หัวข้อที่อยู่นอก placeholder
+        label = _PLACEHOLDER_RE.sub("", line).strip().rstrip(":").strip()
+        if label:
+            kept.append(f"{label}: {_MISSING_DATA_TEXT}")
+    return "\n".join(kept)

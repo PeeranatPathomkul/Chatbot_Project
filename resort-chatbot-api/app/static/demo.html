@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>พูนสุข รีสอร์ท สะเดา</title>
+<style>
+  /*
+    หน้าเว็บตัวอย่างสำหรับ demo วิดเจ็ตแชท
+    ตัวหน้าเว็บตั้งใจให้ว่าง ๆ เพื่อให้เห็นว่าวิดเจ็ตลอยอยู่มุมขวาล่างของเว็บจริงยังไง
+
+    ต่างจากหน้า / ตรงที่หน้านี้เป็นมุมมองของลูกค้า จึงไม่มีป้าย tool, score
+    หรือ token ให้เห็น ถ้าจะ debug ให้ใช้หน้า / แทน
+  */
+  :root {
+    --bg: #ffffff;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --panel: #ffffff;
+    --brand: #1f7a4d;
+    --brand-dark: #186039;
+    --brand-soft: #eef6f1;
+    --user: #1f7a4d;
+    --shadow: 0 12px 32px rgba(15, 32, 24, .16);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10151a; --text: #e6e9ec; --muted: #98a2ac; --line: #263039;
+      --panel: #171e25; --brand: #3f9b6e; --brand-dark: #347f5b; --brand-soft: #1b2b23;
+      --user: #2f6f52; --shadow: 0 12px 32px rgba(0, 0, 0, .5);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", "Sarabun", system-ui, -apple-system, sans-serif;
+    font-size: 16px; line-height: 1.6;
+  }
+
+  /* ---------- ตัวหน้าเว็บ (ตั้งใจให้ว่าง) ---------- */
+  .page {
+    min-height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 24px 16px; gap: 6px;
+  }
+  .page h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: .2px; }
+  .page p { margin: 0; color: var(--muted); font-size: 14px; }
+  .page .hint { margin-top: 18px; font-size: 13px; }
+
+  /* ---------- ปุ่มลอยมุมขวาล่าง ---------- */
+  #bubble {
+    position: fixed; right: 20px; bottom: 20px; z-index: 40;
+    width: 58px; height: 58px; border-radius: 50%; border: 0;
+    background: var(--brand); color: #fff; cursor: pointer;
+    box-shadow: var(--shadow);
+    display: grid; place-items: center;
+    transition: transform .18s ease, background .18s ease;
+  }
+  #bubble:hover { background: var(--brand-dark); transform: translateY(-2px); }
+  #bubble svg { width: 26px; height: 26px; display: block; }
+  #bubble .close-icon { display: none; }
+  #bubble[aria-expanded="true"] .chat-icon { display: none; }
+  #bubble[aria-expanded="true"] .close-icon { display: block; }
+
+  /* จุดแดงเรียกความสนใจ หายไปเมื่อเปิดแชทครั้งแรก */
+  #bubble .dot {
+    position: absolute; top: 3px; right: 3px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #e5484d; border: 2px solid var(--bg);
+  }
+
+  /* ---------- กล่องแชท ---------- */
+  #panel {
+    position: fixed; right: 20px; bottom: 90px; z-index: 39;
+    width: 370px; max-width: calc(100vw - 32px);
+    height: 540px; max-height: calc(100vh - 120px);
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    display: flex; flex-direction: column; overflow: hidden;
+    opacity: 0; transform: translateY(12px) scale(.98); pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  #panel.open { opacity: 1; transform: none; pointer-events: auto; }
+
+  #panel header {
+    background: var(--brand); color: #fff; padding: 13px 16px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  #panel header .title { font-weight: 600; font-size: 15px; }
+  #panel header .sub { font-size: 12px; opacity: .85; }
+  #panel header .spacer { flex: 1; }
+  #panel header button {
+    background: transparent; border: 0; color: #fff; cursor: pointer;
+    font-size: 20px; line-height: 1; padding: 2px 4px; opacity: .85;
+  }
+  #panel header button:hover { opacity: 1; }
+
+  #thread {
+    flex: 1; overflow-y: auto; padding: 16px 14px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .msg { max-width: 84%; padding: 9px 13px; border-radius: 14px; white-space: pre-wrap; word-break: break-word; }
+  .msg.bot { background: var(--brand-soft); border-bottom-left-radius: 4px; align-self: flex-start; }
+  .msg.me { background: var(--user); color: #fff; border-bottom-right-radius: 4px; align-self: flex-end; }
+
+  /* ปุ่มโทร แสดงเมื่อ answered=false ตามที่ ChatResponse.answered บอกไว้ว่าให้ใช้ทำแบบนี้ */
+  .call {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
+    text-decoration: none; font-size: 14px; font-weight: 600;
+    color: var(--brand); border: 1px solid var(--brand); border-radius: 99px;
+    padding: 7px 15px; background: transparent;
+  }
+  .call:hover { background: var(--brand-soft); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-self: flex-start; }
+  .chips button {
+    border: 1px solid var(--line); background: transparent; color: var(--muted);
+    border-radius: 99px; padding: 5px 12px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+  .chips button:hover { border-color: var(--brand); color: var(--brand); }
+
+  .typing { display: inline-flex; gap: 4px; align-items: center; padding: 12px 14px; }
+  .typing span {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
+    animation: blink 1.3s infinite ease-in-out;
+  }
+  .typing span:nth-child(2) { animation-delay: .18s; }
+  .typing span:nth-child(3) { animation-delay: .36s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: .25 } 30% { opacity: 1 } }
+
+  #composer {
+    display: flex; gap: 8px; padding: 11px; border-top: 1px solid var(--line); flex-shrink: 0;
+  }
+  #composer input {
+    flex: 1; min-width: 0; padding: 10px 13px; font-size: 15px; font-family: inherit;
+    border: 1px solid var(--line); border-radius: 99px;
+    background: var(--bg); color: var(--text);
+  }
+  #composer input:focus { outline: 2px solid var(--brand); outline-offset: -1px; }
+  #composer button {
+    flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 0;
+    background: var(--brand); color: #fff; cursor: pointer; display: grid; place-items: center;
+  }
+  #composer button:disabled { opacity: .45; cursor: default; }
+  #composer button svg { width: 19px; height: 19px; }
+
+  /* บนมือถือให้กล่องแชทเต็มจอ ไม่งั้นคีย์บอร์ดจะเบียดจนพิมพ์ไม่ได้ */
+  @media (max-width: 480px) {
+    #panel {
+      right: 0; bottom: 0; width: 100vw; max-width: 100vw;
+      height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0;
+    }
+    #bubble { right: 16px; bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<main class="page">
+  <h1>พูนสุข รีสอร์ท สะเดา</h1>
+  <p>บ้านพักส่วนตัวสไตล์นอร์ดิก อำเภอสะเดา จังหวัดสงขลา</p>
+  <p class="hint">กดไอคอนมุมขวาล่างเพื่อสอบถามข้อมูล</p>
+</main>
+
+<button id="bubble" aria-expanded="false" aria-controls="panel" aria-label="เปิดหน้าต่างแชท">
+  <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 20.5l1.5-4.4A8.4 8.4 0 0 1 3.6 11.5a8.4 8.4 0 0 1 8.4-8.4h.5a8.4 8.4 0 0 1 8.5 8.4z"/>
+  </svg>
+  <svg class="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+    <path d="M18 6 6 18M6 6l12 12"/>
+  </svg>
+  <span class="dot" id="dot"></span>
+</button>
+
+<section id="panel" role="dialog" aria-label="แชทกับพูนสุข รีสอร์ท">
+  <header>
+    <div>
+      <div class="title">พูนสุข รีสอร์ท</div>
+      <div class="sub">ตอบคำถามอัตโนมัติ ตลอด 24 ชม.</div>
+    </div>
+    <div class="spacer"></div>
+    <button type="button" id="close" aria-label="ปิดหน้าต่างแชท">&times;</button>
+  </header>
+
+  <div id="thread"></div>
+
+  <form id="composer">
+    <input id="q" autocomplete="off" placeholder="พิมพ์คำถาม…" aria-label="ข้อความ">
+    <button type="submit" id="send" aria-label="ส่ง">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+      </svg>
+    </button>
+  </form>
+</section>
+
+<script>
+const API = "/api/v1/chatbot/query";
+const PHONE = "081-598-1199";
+
+// session_id เก็บไว้ใน sessionStorage เพื่อให้รีเฟรชแล้วยังเป็นบทสนทนาเดิม
+// (หมายเหตุ: ฝั่ง API ยังไม่ได้เก็บประวัติตาม session_id แต่ละคำถามจึงเริ่มใหม่หมด)
+let session;
+try {
+  session = sessionStorage.getItem("poonsuk_session");
+} catch { /* private mode */ }
+if (!session) {
+  session = "web-" + Math.random().toString(36).slice(2, 10);
+  try { sessionStorage.setItem("poonsuk_session", session); } catch { /* ignore */ }
+}
+
+const GREETING = "สวัสดีค่ะ ยินดีต้อนรับสู่พูนสุข รีสอร์ท มีอะไรให้ช่วยสอบถามไหมคะ";
+const SUGGESTIONS = [
+  "พรุ่งนี้มีห้องว่างไหม",
+  "ห้องพักราคาเท่าไหร่",
+  "เช็คอินกี่โมง",
+  "พาสัตว์เลี้ยงมาได้ไหม",
+];
+
+const bubble = document.getElementById("bubble");
+const panel = document.getElementById("panel");
+const thread = document.getElementById("thread");
+const form = document.getElementById("composer");
+const input = document.getElementById("q");
+const sendBtn = document.getElementById("send");
+const dot = document.getElementById("dot");
+
+let busy = false;
+let started = false;
+
+/* ---------- เปิด/ปิด ---------- */
+function toggle(open) {
+  const willOpen = open ?? !panel.classList.contains("open");
+  panel.classList.toggle("open", willOpen);
+  bubble.setAttribute("aria-expanded", String(willOpen));
+  bubble.setAttribute("aria-label", willOpen ? "ปิดหน้าต่างแชท" : "เปิดหน้าต่างแชท");
+  if (willOpen) {
+    dot.style.display = "none";
+    if (!started) { started = true; greet(); }
+    setTimeout(() => input.focus(), 180);
+  }
+}
+
+bubble.addEventListener("click", () => toggle());
+document.getElementById("close").addEventListener("click", () => toggle(false));
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && panel.classList.contains("open")) toggle(false);
+});
+
+/* ---------- แสดงผล ---------- */
+function addMessage(text, who) {
+  const el = document.createElement("div");
+  el.className = "msg " + who;
+  el.textContent = text;
+  thread.appendChild(el);
+  thread.scrollTop = thread.scrollHeight;
+  return el;
+}
+
+function addTyping() {
+  const el = document.createElement("div");
+  el.className = "msg bot typing";
+  el.innerHTML = "<span></span><span></span><span></span>";
+  thread.appendChild(el);
+  thread.scrollTop = thread.scrollHeight;
+  return el;
+}
+
+function addCallButton() {
+  const a = document.createElement("a");
+  a.className = "call";
+  a.href = "tel:" + PHONE.replace(/-/g, "");
+  a.textContent = "โทรหารีสอร์ท " + PHONE;
+  thread.appendChild(a);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function greet() {
+  addMessage(GREETING, "bot");
+  const chips = document.createElement("div");
+  chips.className = "chips";
+  SUGGESTIONS.forEach(text => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = text;
+    b.addEventListener("click", () => { chips.remove(); ask(text); });
+    chips.appendChild(b);
+  });
+  thread.appendChild(chips);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+/* ---------- ยิงคำถาม ---------- */
+async function ask(text) {
+  if (busy || !text.trim()) return;
+  busy = true;
+  sendBtn.disabled = true;
+  input.value = "";
+
+  addMessage(text, "me");
+  const typing = addTyping();
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: session, message: text, language: "th" }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    typing.remove();
+    addMessage(data.answer, "bot");
+    // answered=false แปลว่าไม่มีข้อมูลในระบบ จึงเสนอช่องทางติดต่อคนจริงให้แทน
+    if (data.answered === false) addCallButton();
+  } catch (err) {
+    typing.remove();
+    addMessage(
+      "ขออภัยค่ะ ตอนนี้ระบบขัดข้องชั่วคราว (" + err.message + ") รบกวนติดต่อที่ " + PHONE + " นะคะ",
+      "bot"
+    );
+  } finally {
+    busy = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+form.addEventListener("submit", e => { e.preventDefault(); ask(input.value); });
+</script>
+</body>
+</html>

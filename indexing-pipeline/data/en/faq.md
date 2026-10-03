@@ -21,22 +21,22 @@ Q: Can I leave my bags if I arrive before check-in time?
 A: No. The resort does not offer luggage storage and does not accept check-in before 2:00 PM.
 
 Q: How much does a room cost?
-A: 650 THB per room per night. The rate is the same for every room type and every day of the week.
+A: The rate is charged per room per night and is the same every day of the week. The current rate is available from the booking system.
 
 Q: Is it more expensive on weekends?
-A: No. The rate is 650 THB per night every day. There is no weekend or holiday surcharge.
+A: No. The nightly rate is the same every day. There is no weekend or holiday surcharge.
 
 Q: What room types do you have?
-A: Two types — twin-bed rooms (P1, P2, P3, P4) and single-bed rooms (F1, F2). Both cost 650 THB per night and are the same size, 16 square metres. They differ only in the number of beds. Both sleep 2 to 3 guests.
+A: Two types — twin-bed rooms and single-bed rooms. Both are the same size, 16 square metres, and differ only in the number of beds. Rates and how many guests each room sleeps are available from the booking system.
 
 Q: How big are the rooms?
 A: Every room is 16 square metres (4 x 4 metres).
 
 Q: How many people can stay in one room?
-A: Each room sleeps 2 to 3 guests. A third guest needs an extra bed, which costs 200 THB per night.
+A: How many guests a room sleeps is available from the booking system. One more guest can be added per room with an extra bed, which costs 200 THB per night.
 
 Q: Can I request an extra bed? How much is it?
-A: Yes, an extra bed can be added to any room for 200 THB per bed per night, on top of the 650 THB room rate. For example, one room with one extra bed comes to 850 THB per night. Please request it when you book.
+A: Yes, one extra bed can be added to any room for 200 THB per bed per night, on top of the room rate. Please request it when you book.
 
 Q: Do children stay free?
 A: The resort charges per room rather than per person, so there is no separate child policy. Children stay at no extra cost as long as the total number of guests fits the room. If you need an additional bed, the 200 THB per night extra bed fee applies.
@@ -69,7 +69,7 @@ Q: Do the rooms have a TV and a fridge?
 A: Yes, every room has both a TV and a refrigerator.
 
 Q: Is breakfast included?
-A: No. The resort does not serve breakfast and has no restaurant. The 650 THB rate covers the room only. Complimentary instant coffee sachets are provided in the room.
+A: No. The resort does not serve breakfast and has no restaurant. The room rate covers the room only. Complimentary instant coffee sachets are provided in the room.
 
 Q: Is there free Wi-Fi?
 A: Yes, free Wi-Fi is available in every room at no extra charge.

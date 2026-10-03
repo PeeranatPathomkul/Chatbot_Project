@@ -34,7 +34,7 @@ Alternatives: <<TODO: alternatives such as taxi, Grab or minibus, with approxima
 
 ## By Public Transport
 Nearest bus stop or terminal: <<TODO: name and distance>>
-<<TODO: how to continue from there to the resort>>
+Getting from there to the resort: <<TODO: how to continue from there to the resort>>
 
 ## By Private Car
 Free parking is available for guests, close to the rooms.

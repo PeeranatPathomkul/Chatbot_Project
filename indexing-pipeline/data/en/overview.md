@@ -11,12 +11,13 @@ Poonsuk Resort (Poonsuk Resort @Sadao) is located in Sadao District, Songkhla Pr
 It is a Nordic-style accommodation where each room is a separate small private house,
 set in quiet, shaded and peaceful surroundings.
 The resort has 6 rooms in total, each 16 square metres, in 2 types:
-twin-bed rooms (P1, P2, P3, P4) and single-bed rooms (F1, F2).
+twin-bed rooms (twin) and single-bed rooms (single). Which room is which type is
+available from the booking system.
 
 Highlights: clean and spacious rooms, air conditioning, free Wi-Fi, a private bathroom in every
 room, convenient and secure parking, and a quiet, private, green setting that feels like a second home.
 Best suited for: guests who want privacy and quiet, travellers visiting Sadao on business,
-and small families — each room sleeps 2 to 3 guests.
+and small families.
 
 ## Contact
 You can reach the resort by
@@ -41,8 +42,9 @@ Our staff speak: <<TODO: languages spoken by staff, e.g. Thai, English, Malay>>
 
 ## Policy Summary
 Check-in from 2:00 PM until 10:00 PM / check-out by 12:00 noon.
-Room rate is 650 THB per night, the same for every room type and every day of the week.
-Each room sleeps 2 to 3 guests. An extra bed costs 200 THB per night.
+The nightly room rate and the number of guests each room sleeps are available from the
+booking system. The rate is the same every day, with no weekend surcharge.
+An extra bed costs 200 THB per night, one per room.
 No pets are allowed, and smoking is not permitted inside the rooms.
 Breakfast is not provided.
 Full details are in the "Booking and Stay Policy" section.
