@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     # ไม่มีอะไรกั้นไม่ให้อ่าน booking ของลูกค้าคนอื่น
     booking_api_base_url: str = "http://localhost:3000/api"
     booking_api_timeout_seconds: int = 10
+    # key ลับที่แนบไปเป็น header X-Internal-Key ทุกครั้งที่เรียก Booking API
+    # มีไว้ให้ NestJS **ไม่นับ rate limit** (120 ครั้ง/นาที/IP) ให้บอทเท่านั้น
+    # เพราะคำขอของลูกค้าทุกคนวิ่งออกจาก IP เดียวของบอท จึงโดน 429 ได้ง่ายมาก
+    # **ไม่ใช่สิทธิ์อ่านข้อมูลเพิ่ม** — /bookings/me ยังต้องใช้ JWT ของลูกค้าคนนั้นเหมือนเดิม
+    # ค่าต้องตรงกับ CHATBOT_INTERNAL_KEY ของ backend ถ้าว่างก็ยังทำงานได้ แค่โดน rate limit
+    # ห้ามใส่ค่านี้ลง log / ผลของ tool / response
+    booking_api_internal_key: str = ""
 
     # --- Tool calling ---
     # จำนวนรอบสูงสุดที่ยอมให้โมเดลเรียก tool ก่อนบังคับให้สรุปคำตอบ

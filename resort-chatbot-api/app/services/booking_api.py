@@ -14,6 +14,11 @@ booking ได้ทุกคนเด็ดขาด
 การ refresh ต้องใช้ refresh token ที่อยู่กับแอปฝั่งลูกค้า ไม่ได้อยู่กับแชทบอท
 เจอ 401 เราจึงไม่ refresh เอง แต่โยน BookingAPIAuthError ให้ชั้นบนบอกลูกค้า
 ให้ล็อกอินใหม่ (แอปเป็นคนจัดการ refresh + ยิงคำถามเดิมซ้ำ)
+
+**เรื่อง rate limit** — NestJS จำกัด 120 ครั้ง/นาที/IP และคำขอของลูกค้าทุกคนออกจาก IP
+เดียวของบอท เราจึงแนบ `X-Internal-Key` ทุกคำขอเพื่อให้ NestJS ไม่นับ rate limit (เฉพาะ GET)
+key นี้ไม่ได้ให้สิทธิ์อ่านข้อมูลเพิ่ม จึงไม่ขัดกับหลัก "ห้ามมี token กลาง" ข้างบน
+และด้วยเหตุนี้ client ตัวนี้จึงเรียกได้แค่ GET เท่านั้น
 """
 
 from datetime import date
@@ -34,9 +39,25 @@ class BookingAPIAuthError(BookingAPIError):
 
 
 class BookingAPIClient:
-    def __init__(self, base_url: str | None = None, timeout: int | None = None):
+    def __init__(
+        self,
+        base_url: str | None = None,
+        timeout: int | None = None,
+        internal_key: str | None = None,
+    ):
         self.base_url = (base_url or settings.booking_api_base_url).rstrip("/")
         self.timeout = timeout or settings.booking_api_timeout_seconds
+        self._internal_key = (
+            settings.booking_api_internal_key if internal_key is None else internal_key
+        )
+
+    def _headers(self, token: str | None) -> dict[str, str]:
+        headers: dict[str, str] = {}
+        if self._internal_key:
+            headers["X-Internal-Key"] = self._internal_key
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        return headers
 
     async def _get(
         self,
@@ -44,7 +65,7 @@ class BookingAPIClient:
         params: dict[str, Any] | None = None,
         token: str | None = None,
     ) -> Any:
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        headers = self._headers(token)
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
                 response = await client.get(
@@ -59,6 +80,11 @@ class BookingAPIClient:
             raise BookingAPIAuthError("ไม่มีสิทธิ์เข้าถึงข้อมูลนี้")
         if response.status_code == 404:
             raise BookingAPIError("ไม่พบข้อมูลที่ต้องการ")
+        if response.status_code == 429:
+            # มักแปลว่า X-Internal-Key ว่างหรือไม่ตรงกับ backend เลยโดนนับ rate limit
+            raise BookingAPIError(
+                "ระบบจองมีคำขอมากเกินไป กรุณาลองใหม่อีกครั้งในสักครู่"
+            )
         if response.status_code >= 400:
             raise BookingAPIError(f"ระบบจองตอบกลับด้วยสถานะ {response.status_code}")
 
@@ -73,10 +99,10 @@ class BookingAPIClient:
         ว่าชนกับ booking ที่มีอยู่หรือไม่ แล้วคืนทุกห้องที่ไม่ได้ปิดซ่อม
         ซึ่งแปลว่า "ไม่ได้ปิดซ่อม" ไม่ใช่ "ว่างให้จอง" คนละความหมายกันคนละเรื่อง
 
-        **ไม่ส่ง guests ต่อเข้า API โดยตั้งใจ** — capacity ใน DB คือจำนวนคนที่นอนได้
-        ด้วยเตียงที่มีอยู่ในห้อง (2) แต่ห้องรับได้จริงถึง 3 ท่านโดยขอเตียงเสริม
-        การส่ง ?guests=3 จึงกรองห้องจริงทิ้งทั้งหมด (ยืนยันกับ API จริงแล้ว)
-        ปล่อยให้โมเดลเอา capacity ไปคิดเรื่องเตียงเสริมเองตามกติกาใน SYSTEM_PROMPT
+        **ไม่ส่ง guests ต่อเข้า API โดยตั้งใจ** — API กรองห้องที่ capacity < guests ทิ้ง
+        ลูกค้ามา 3 คนจึงได้ผลว่างเปล่า (ยืนยันกับ API จริงแล้ว) ทั้งที่ยังมีทางเลือก
+        คือจองห้อง capacity 2 แล้วโทรขอเตียงเสริม หรือจอง 2 ห้อง
+        ต้องได้ห้องทั้งหมดมาก่อน แล้วให้โมเดลเทียบกับ capacity ตามกติกาใน SYSTEM_PROMPT
         """
         rooms = await self._get(
             "/rooms", params={"checkIn": check_in, "checkOut": check_out}
@@ -88,11 +114,9 @@ class BookingAPIClient:
         check_in: str,
         check_out: str,
         rooms: int = 1,
-        extra_beds: int = 0,
-        extra_bed_price_per_night: float | None = None,
         room_name: str | None = None,
     ) -> dict[str, Any]:
-        """คิดยอดรวมของการเข้าพักหนึ่งครั้ง โดยดึงราคาห้องสดจากระบบจอง
+        """คิดยอดค่าห้องของการเข้าพักหนึ่งครั้ง โดยดึงราคาห้องสดจากระบบจอง
 
         **ทำไมต้องมีฟังก์ชันนี้ แทนที่จะให้โมเดลคูณเลขเอง**
         ทดสอบจริงแล้วโมเดลคิดเลขผิดเป็นระยะ เช่นตอบว่า "650 x 1 ห้อง x 2 คืน = 2,600 บาท"
@@ -102,6 +126,10 @@ class BookingAPIClient:
 
         จำนวนคืนนับแบบ half-open [check_in, check_out) ให้ตรงกับที่ระบบจองใช้
         เข้าวันที่ 10 ออกวันที่ 12 = 2 คืน
+
+        **ไม่คิดค่าเตียงเสริมโดยตั้งใจ** — ระบบจองไม่มีเรื่องเตียงเสริมเลย ยอดที่แอปเก็บ
+        (totalPrice) คือค่าห้องอย่างเดียว ส่วนเตียงเสริมลูกค้าโทรขอแล้วจ่ายที่รีสอร์ทวันเช็คอิน
+        ถ้ารวมค่าเตียงเสริมเข้ามาในยอดนี้ ตัวเลขที่บอทบอกจะไม่ตรงกับยอดที่ต้องโอนในแอป
         """
         try:
             start = date.fromisoformat(check_in)
@@ -114,19 +142,6 @@ class BookingAPIClient:
             raise BookingAPIError("วันออกต้องอยู่หลังวันเข้าพักอย่างน้อย 1 วัน")
         if rooms < 1:
             raise BookingAPIError("จำนวนห้องต้องเป็น 1 ห้องขึ้นไป")
-        if extra_beds < 0:
-            raise BookingAPIError("จำนวนเตียงเสริมติดลบไม่ได้")
-        if extra_beds > rooms * EXTRA_BEDS_PER_ROOM:
-            raise BookingAPIError(
-                f"ขอเตียงเสริมได้ห้องละ {EXTRA_BEDS_PER_ROOM} เตียง "
-                f"จอง {rooms} ห้องจึงขอได้สูงสุด {rooms * EXTRA_BEDS_PER_ROOM} เตียง"
-            )
-        if extra_beds > 0 and not extra_bed_price_per_night:
-            # บังคับให้ไปเอาอัตราจริงมาก่อน ไม่งั้นโมเดลจะเดาตัวเลขเอง
-            raise BookingAPIError(
-                "ต้องระบุ extra_bed_price_per_night เมื่อขอเตียงเสริม "
-                "ให้ค้นอัตราค่าเตียงเสริมจาก search_knowledge_base ก่อน"
-            )
 
         available = await self.search_rooms(check_in, check_out)
         if not available:
@@ -145,8 +160,6 @@ class BookingAPIClient:
             chosen = min(available, key=lambda r: r["pricePerNight"])
 
         price_per_night = chosen["pricePerNight"]
-        room_total = price_per_night * rooms * nights
-        extra_bed_total = (extra_bed_price_per_night or 0) * extra_beds * nights
 
         return {
             "checkIn": check_in,
@@ -156,16 +169,8 @@ class BookingAPIClient:
             "roomTypeLabel": chosen["typeLabel"],
             "pricePerNight": price_per_night,
             "rooms": rooms,
-            "roomTotal": room_total,
-            "extraBeds": extra_beds,
-            "extraBedPricePerNight": extra_bed_price_per_night or 0,
-            "extraBedTotal": extra_bed_total,
-            "total": room_total + extra_bed_total,
-            "note": (
-                "ยอดนี้เป็นค่าห้องอย่างเดียว ยังไม่รวมเตียงเสริม"
-                if extra_beds == 0
-                else f"รวมค่าเตียงเสริม {extra_beds} เตียง x {nights} คืนแล้ว"
-            ),
+            "total": price_per_night * rooms * nights,
+            "note": "ยอดนี้เป็นค่าห้องที่ชำระในแอป ไม่รวมเตียงเสริม",
         }
 
     async def list_restaurants(self) -> list[dict[str, Any]]:
@@ -195,19 +200,13 @@ class BookingAPIClient:
         return await self._get(f"/bookings/{booking_id}/payment", token=token)
 
 
-#: จำนวนเตียงเสริมที่ขอได้ต่อห้อง — นโยบายของรีสอร์ท (ที่มา: คลังความรู้ room_types.md)
-#: ค่าเตียงเสริมเป็นตัวเลขที่คลังความรู้เป็นเจ้าของ แต่ "ขอได้กี่เตียงต่อห้อง"
-#: ต้องมาอยู่ตรงนี้ด้วย เพราะต้องใช้คำนวณ maxGuestsWithExtraBed ให้โมเดล
-#: ถ้ารีสอร์ทเปลี่ยนนโยบาย ต้องแก้ทั้งสองที่ให้ตรงกัน
-EXTRA_BEDS_PER_ROOM = 1
-
 #: แปลง type ที่ระบบจองใช้ ให้เป็นคำที่ลูกค้าพูดจริง
 #:
 #: ลูกค้าถามว่า "อยากได้เตียงเดี่ยว มีห้องว่างกี่ห้อง" แล้วบอกยกมาทั้ง 5 ห้อง
 #: พร้อมบอกว่าเป็นเตียงเดี่ยวหมด ทั้งที่ผล tool มี type ติดมาครบทุกห้อง
 #: สาเหตุคือ type เป็นคำอังกฤษ (single/twin) คนละคำกับที่ลูกค้าพิมพ์ โมเดลจึงไม่ได้
 #: เอามาใช้กรอง การส่งคำไทยไปด้วยทำให้มันจับคู่กับคำถามได้ตรง ๆ
-#: (เหตุผลเดียวกับ maxGuestsWithExtraBed — คำนวณ/แปลงให้เสร็จในโค้ด อย่าฝากไว้กับ prompt)
+#: (หลักเดียวกับ quote_stay — คำนวณ/แปลงให้เสร็จในโค้ด อย่าฝากไว้กับ prompt)
 #:
 #: ถ้า backend เพิ่ม type ใหม่ที่ไม่มีในนี้ จะตกไปใช้ค่าดิบ ซึ่งยังอ่านออกแม้จะไม่สวย
 ROOM_TYPE_LABELS = {
@@ -221,22 +220,21 @@ def _trim_room(room: dict[str, Any]) -> dict[str, Any]:
 
     imageUrls/createdAt/updatedAt ไม่ช่วยตอบคำถามเลยแต่กิน token ทุกครั้งที่เรียก tool
 
-    **ทำไมต้องคำนวณ maxGuestsWithExtraBed ให้ ไม่ปล่อยให้โมเดลบวกเอง**
-    ตอนแรกบอกกติกาไว้ใน system prompt ว่า "จำนวนสูงสุดต่อห้อง = capacity + 1"
-    แต่ทดสอบจริงแล้วโมเดลทำตามบ้างไม่ทำตามบ้าง คำถามเดียวกัน ("มา 3 คน พักห้องเดียว
-    ได้ไหม") รอบหนึ่งตอบว่าได้พร้อมคิดค่าเตียงเสริมถูกต้อง อีกรอบตอบว่าไม่ได้
-    เพราะมันยึดเลข capacity: 2 ที่เห็นเป็นตัวเลขชัด ๆ ใน JSON มากกว่ากติกาที่เป็นร้อยแก้ว
-    การส่งค่าที่คำนวณเสร็จแล้วไปเลยตัดปัญหานี้ทิ้งทั้งก้อน
+    **ทำไมไม่มี maxGuestsWithExtraBed แล้ว** — เวอร์ชันก่อนส่ง capacity + 1 ไปให้โมเดล
+    ผลคือบอทบอกลูกค้าว่า "จองห้องเดียว 3 คนได้" แต่ POST /api/bookings ตอบ 400 ทันที
+    เมื่อ guests > capacity เพราะระบบจองไม่มีเรื่องเตียงเสริม ตอนนี้ capacity คือจำนวนสูงสุด
+    ที่จองในแอปได้ ส่วนเตียงเสริมเป็นเรื่องที่ลูกค้าโทรขอเอง (กติกาอยู่ใน SYSTEM_PROMPT ข้อ 5)
+
+    amenities ต้องส่งไปด้วยเสมอ เพราะแต่ละห้องไม่เหมือนกัน (บางห้องมีตู้เย็น บางห้องไม่มี)
+    คลังความรู้จึงไม่มีรายการของในห้องแล้ว
     """
-    capacity = room["capacity"]
     return {
         "id": room["id"],
         "name": room["name"],
         "type": room["type"],
         "typeLabel": ROOM_TYPE_LABELS.get(room["type"], room["type"]),
         "pricePerNight": room["pricePerNight"],
-        "capacity": capacity,
-        "maxGuestsWithExtraBed": capacity + EXTRA_BEDS_PER_ROOM,
+        "capacity": room["capacity"],
         "description": room.get("description", ""),
         "amenities": room.get("amenities", []),
     }
@@ -265,6 +263,46 @@ def _trim_booking(booking: dict[str, Any]) -> dict[str, Any]:
         "status": booking.get("status"),
         "paymentStatus": booking.get("paymentStatus"),
     }
+
+
+#: สถานะที่ยังถือว่า "จองอยู่" ถ้ายังไม่เลยวันเช็คเอาท์ — checked_in แยกไว้ต่างหาก
+#: เพราะลูกค้ากำลังพักอยู่ นับเป็นปัจจุบันเสมอจนกว่าเจ้าหน้าที่จะกดเช็คเอาท์
+_ACTIVE_BOOKING_STATUSES = frozenset({"pending", "approved"})
+
+
+def group_bookings(
+    bookings: list[dict[str, Any]], today: str, include_past: bool = False
+) -> dict[str, Any]:
+    """แยกการจองเป็น "ที่ยังไม่ถึง/กำลังพัก" กับ "ประวัติ" ให้เสร็จในโค้ด
+
+    **ทำไมไม่ส่งทั้งหมดให้โมเดลกรองเอง** — ทดสอบจริง ลูกค้าถาม "ฉันจองอะไรไว้บ้าง"
+    บอทไล่ทุกรายการรวมที่เช็คเอาท์ไปแล้วและที่เลยวันไปแล้ว 7 รายการ ทั้งที่ลูกค้า
+    อยากรู้แค่ที่กำลังจะมาถึง โมเดลเทียบวันที่กับ "วันนี้" ไม่แม่น (หลักเดียวกับ quote_stay)
+
+    ปัจจุบัน = checked_in หรือ (pending/approved และ checkOut > วันนี้)
+    นอกนั้นเป็นประวัติ (เช็คเอาท์แล้ว ยกเลิกแล้ว หรือเลยวันเช็คเอาท์ไปแล้ว)
+    วันที่เป็น YYYY-MM-DD จึงเทียบเป็น string ได้ตรง ๆ
+    """
+    current: list[dict[str, Any]] = []
+    past: list[dict[str, Any]] = []
+    for booking in bookings:
+        is_current = booking.get("status") == "checked_in" or (
+            booking.get("status") in _ACTIVE_BOOKING_STATUSES
+            and str(booking.get("checkOut", ""))[:10] > today
+        )
+        (current if is_current else past).append(booking)
+
+    current.sort(key=lambda b: str(b.get("checkIn", "")))
+    result: dict[str, Any] = {
+        "today": today,
+        "currentBookings": current,
+        "pastBookingsCount": len(past),
+    }
+    if include_past:
+        result["pastBookings"] = sorted(
+            past, key=lambda b: str(b.get("checkIn", "")), reverse=True
+        )
+    return result
 
 
 @lru_cache

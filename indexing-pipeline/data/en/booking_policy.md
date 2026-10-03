@@ -21,21 +21,28 @@ Guests must present: <<TODO: whether an original ID card or passport is required
 Security deposit: <<TODO: whether a damage deposit is collected, and how much>>
 
 ## Booking and Payment
-Book by calling 081-598-1199 or messaging Facebook: Poonsuk Resort Sadao.
-A booking is only confirmed once the 200 THB deposit has been paid.
-Transfer the deposit to PromptPay number 081-599-3128.
-This PromptPay number differs from the contact number 081-598-1199, but both belong to the resort.
-The balance is paid on the day of check-in.
+Book through the resort's app, which is the main booking channel.
+Call 081-598-1199 or message Facebook: Poonsuk Resort Sadao for enquiries and extra bed requests.
+Guests pay the full room charge in the app in a single payment — there is no part-payment and no balance due at check-in —
+by scanning the PromptPay QR code in the app and uploading the slip in the app within the time limit shown in the app.
+If the slip is not uploaded in time, the booking is cancelled automatically and you can book again.
+Staff check the slip, and the booking is confirmed once it has been checked.
 The resort accepts bank transfer only — no cash and no credit cards.
+The app accepts no more guests than the room allows. If you have one guest more than that, book in the app
+for the number of guests the room allows, then call the owner on 081-598-1199 to request an extra bed
+(at most one per room, 200 THB per bed per night).
+The extra bed fee is paid at the resort on the day of check-in, not in the app.
 
 ## Cancellation Policy
-You may cancel at any time — there is no minimum notice period.
-However, the 200 THB deposit you have paid is non-refundable in all cases.
-The resort does not refund deposits regardless of how far in advance you cancel.
-Please be certain of your dates before paying the deposit.
+You can cancel a booking yourself in the app, but only before the check-in date.
+From the check-in date onwards it cannot be cancelled in the app — please contact the resort on 081-598-1199.
+If the cancelled booking has already been paid, the system records a refund automatically,
+and staff transfer the money back.
+Full refund: <<TODO: whether the refund is the full amount>>
+Refund timing: <<TODO: how many days the refund takes>>
 
 ## Date Changes
-Changing your stay dates: <<TODO: whether dates can be changed, how much notice is required, and whether the deposit carries over>>
+Changing your stay dates: <<TODO: whether dates can be changed, and how much notice is required>>
 
 ## Pet Policy
 The resort does not accept pets. Animals of any kind and any size, including dogs and cats,

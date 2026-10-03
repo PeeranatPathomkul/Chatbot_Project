@@ -58,18 +58,21 @@ ANSWERABLE: list[EvalCase] = [
     _case("ราคาห้องกี่บาท", "th", "rates.md", "faq.md"),
     _case("เสาร์อาทิตย์แพงกว่ามั้ย", "th", "rates.md", "faq.md"),
     _case("จองยังไง", "th", "faq.md", "booking_policy.md", "overview.md"),
-    _case("ต้องมัดจำเท่าไหร่", "th", "rates.md", "faq.md", "booking_policy.md"),
+    # ระบบจองไม่มีมัดจำแล้ว (จ่ายเต็มจำนวนในแอป) คำถามจึงเปลี่ยนเป็นเรื่องวิธีชำระเงิน
+    _case("จ่ายเงินยังไง", "th", "rates.md", "faq.md", "booking_policy.md"),
     _case("โอนเงินเข้าเบอร์อะไร", "th", "rates.md", "faq.md", "booking_policy.md"),
     _case("จ่ายเงินสดได้ป่ะ", "th", "rates.md", "faq.md", "booking_policy.md"),
     _case("ยกเลิกแล้วได้เงินคืนมั้ย", "th", "booking_policy.md", "faq.md"),
     # --- ห้องพัก ---
     _case("มีห้องแบบไหนบ้าง", "th", "room_types.md", "faq.md"),
-    _case("ห้อง P3 เตียงแบบไหน", "th", "room_types.md", "faq.md"),
-    _case("F2 เป็นห้องอะไร", "th", "room_types.md", "faq.md"),
+    _case("ห้องแบบ twin มีกี่เตียง", "th", "room_types.md", "faq.md"),
+    _case("ห้อง single คือห้องแบบไหน", "th", "room_types.md", "faq.md"),
     _case("ห้องกว้างกี่ตารางเมตร", "th", "room_types.md", "faq.md"),
     _case("นอนได้กี่คน", "th", "room_types.md", "faq.md"),
     _case("ขอเตียงเสริมได้มั้ย กี่บาท", "th", "room_types.md", "faq.md"),
-    _case("ในห้องมีตู้เย็นมั้ย", "th", "room_types.md", "faq.md", "facilities.md"),
+    # ของในห้องย้ายไปอยู่ใน amenities ของแต่ละห้องในระบบจองแล้ว คลังเหลือแค่ประโยค
+    # "แต่ละห้องไม่เหมือนกัน ดูในแอป" ซึ่งอยู่ในสามไฟล์นี้ (ไม่มีคำว่าตู้เย็นแล้ว)
+    _case("ในห้องมีตู้เย็นมั้ย", "th", "faq.md", "room_types.md", "facilities.md"),
     _case("มีน้ำอุ่นป่ะ", "th", "room_types.md", "faq.md", "facilities.md"),
     _case("มีทีวีมั้ย", "th", "room_types.md", "faq.md", "facilities.md"),
     # --- นโยบาย ---
@@ -100,7 +103,7 @@ ANSWERABLE: list[EvalCase] = [
     _case("How many people per room?", "en", "room_types.md", "faq.md"),
     _case("Is there free wifi?", "en", "facilities.md", "faq.md", "room_types.md"),
     _case("Is parking free?", "en", "facilities.md", "faq.md"),
-    _case("How do I pay the deposit?", "en", "rates.md", "faq.md", "booking_policy.md"),
+    _case("How do I pay for my booking?", "en", "rates.md", "faq.md", "booking_policy.md"),
     _case("Do you have a swimming pool?", "en", "facilities.md", "faq.md"),
     _case("Where is the resort?", "en", "location_and_travel.md", "faq.md", "overview.md"),
 ]

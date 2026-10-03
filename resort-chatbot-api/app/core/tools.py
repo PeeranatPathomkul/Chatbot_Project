@@ -10,9 +10,11 @@
 
 **เส้นแบ่งว่าข้อมูลไหนมาจากไหน**
 - ระบบจอง (PostgreSQL ผ่าน Booking API) เป็นเจ้าของ:
-  ห้องว่าง ราคาห้อง ชื่อห้อง capacity สิ่งอำนวยความสะดวกในห้อง
+  ห้องว่าง ราคาห้อง ชื่อห้อง จำนวนห้อง capacity สิ่งอำนวยความสะดวกในห้อง (แต่ละห้องไม่เหมือนกัน)
+  เลขพร้อมเพย์ และเวลากันห้องก่อนยกเลิกอัตโนมัติ (holdMinutes)
 - คลังความรู้ (Chroma) เป็นเจ้าของ:
-  ค่าเตียงเสริม มัดจำ นโยบายยกเลิก เวลาเช็คอิน สิ่งอำนวยความสะดวกส่วนกลาง การเดินทาง
+  ค่าเตียงเสริมและวิธีขอ วิธีชำระเงินโดยรวม นโยบายยกเลิก เวลาเช็คอิน
+  สิ่งอำนวยความสะดวกส่วนกลาง การเดินทาง
 ตัวเลขที่ระบบจองเป็นเจ้าของถูกถอดออกจากคลังความรู้แล้ว เพื่อไม่ให้มีสองแหล่งที่ขัดกันเอง
 (ถ้าเติมราคากลับเข้าไปใน data/*.md เมื่อไหร่ บอทจะเริ่มตอบราคาที่ไม่ตรงกับที่จองจริงได้)
 
@@ -23,6 +25,7 @@ parameter ใน schema โมเดลจะแต่ง token ขึ้นม�
 """
 
 import json
+from datetime import date
 from typing import Any
 
 from app.config import settings
@@ -30,6 +33,7 @@ from app.services.booking_api import (
     BookingAPIAuthError,
     BookingAPIClient,
     BookingAPIError,
+    group_bookings,
 )
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_store import VectorStore
@@ -40,6 +44,13 @@ _LOGIN_REQUIRED = {
     "hint": "ลูกค้ายังไม่ได้ล็อกอิน ให้แจ้งลูกค้าว่าต้องเข้าสู่ระบบก่อนจึงจะดูข้อมูลการจองของตัวเองได้",
 }
 
+#: แนบไปกับผลของ search_available_rooms ทุกครั้ง (เหตุผลอยู่ที่ ToolExecutor._dispatch)
+_ROOMS_NOTE = (
+    "capacity คือจำนวนผู้เข้าพักสูงสุดที่จองในแอปได้ต่อห้อง ถ้าลูกค้ามาเกิน capacity "
+    "หรือถามเรื่องเตียงเสริม ต้องเรียก search_knowledge_base ค้น 'ค่าเตียงเสริม' ก่อนตอบ "
+    "ผลนี้ไม่มีค่าเตียงเสริม ห้ามเดาตัวเลข และห้ามแสดงชื่อ field ให้ลูกค้าเห็น"
+)
+
 TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
         "type": "function",
@@ -47,10 +58,10 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "name": "search_available_rooms",
             "description": (
                 "ค้นหาห้องพักที่ว่างจริงในช่วงวันที่ที่ระบุ พร้อมราคาต่อคืนและจำนวนผู้เข้าพักที่รับได้ "
-                "แต่ละห้องคืนมาสามค่าที่ต้องใช้: capacity คือจำนวนคนที่นอนได้ด้วยเตียงที่มีอยู่แล้ว, "
-                "maxGuestsWithExtraBed คือจำนวนสูงสุดที่ห้องรับได้เมื่อขอเตียงเสริม, "
-                "และ typeLabel คือชนิดเตียงเป็นภาษาไทย ใช้กรองเมื่อลูกค้าระบุว่าอยากได้เตียงแบบไหน "
-                "ใช้ tool นี้ทุกครั้งที่ลูกค้าถามเรื่องห้องว่าง ราคาห้อง หรือขอให้คิดราคารวม "
+                "แต่ละห้องคืนค่าที่ต้องใช้: capacity คือจำนวนผู้เข้าพักสูงสุดที่จองในแอปได้ต่อห้อง, "
+                "typeLabel คือชนิดเตียงเป็นภาษาไทย ใช้กรองเมื่อลูกค้าระบุว่าอยากได้เตียงแบบไหน, "
+                "และ amenities คือสิ่งอำนวยความสะดวกของห้องนั้น (แต่ละห้องไม่เหมือนกัน) "
+                "ใช้ tool นี้ทุกครั้งที่ลูกค้าถามเรื่องห้องว่าง ราคาห้อง ของในห้อง หรือขอให้คิดราคารวม "
                 "ต้องระบุวันที่เสมอ ถ้าลูกค้าไม่ได้บอกวันที่ ให้ใช้วันนี้ถึงพรุ่งนี้ "
                 "แล้วบอกลูกค้าด้วยว่าคิดให้จากช่วงวันไหน"
             ),
@@ -75,10 +86,10 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "quote_price",
             "description": (
-                "คิดยอดรวมค่าที่พักให้ ใช้ tool นี้ทุกครั้งที่ลูกค้าถามราคารวม "
+                "คิดยอดรวมค่าห้องที่ต้องชำระในแอปให้ ใช้ tool นี้ทุกครั้งที่ลูกค้าถามราคารวม "
                 "ห้ามคูณหรือบวกเลขเอง และห้ามนับจำนวนคืนเอง tool นี้นับให้จากวันที่ "
-                "ถ้าลูกค้ายังไม่ได้บอกจำนวนผู้เข้าพัก ให้ใส่ extra_beds เป็น 0 "
-                "แล้วค่อยถามลูกค้าว่ามากันกี่ท่าน ห้ามเดาเอง"
+                "ยอดที่ได้เป็นค่าห้องอย่างเดียว ไม่รวมเตียงเสริม "
+                "(เตียงเสริมชำระแยกที่รีสอร์ทวันเช็คอิน ห้ามบวกเข้ายอดนี้)"
             ),
             "parameters": {
                 "type": "object",
@@ -95,26 +106,11 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                         "type": "integer",
                         "description": "จำนวนห้องที่จอง ถ้าลูกค้าไม่ได้บอกให้ใส่ 1",
                     },
-                    "extra_beds": {
-                        "type": "integer",
-                        "description": (
-                            "จำนวนเตียงเสริมทั้งหมด ใส่มากกว่า 0 ได้เฉพาะเมื่อลูกค้าขอเตียงเสริม "
-                            "หรือบอกจำนวนผู้เข้าพักที่เกิน capacity ของห้องเท่านั้น "
-                            "ถ้าลูกค้าไม่ได้บอกจำนวนคน ต้องใส่ 0"
-                        ),
-                    },
-                    "extra_bed_price_per_night": {
-                        "type": "number",
-                        "description": (
-                            "อัตราค่าเตียงเสริมต่อเตียงต่อคืน ต้องเอามาจากผล "
-                            "search_knowledge_base เท่านั้น ห้ามเดา "
-                            "จำเป็นต้องใส่เมื่อ extra_beds มากกว่า 0"
-                        ),
-                    },
                     "room_name": {
                         "type": "string",
                         "description": (
-                            "ชื่อห้องที่ลูกค้าเจาะจง เช่น P1 ถ้าไม่ได้เจาะจงให้เว้นไว้ "
+                            "ชื่อห้องที่ลูกค้าเจาะจง ต้องตรงกับ name ในผล search_available_rooms "
+                            "ถ้าไม่ได้เจาะจงให้เว้นไว้ "
                             "แล้วระบบจะคิดจากห้องที่ถูกที่สุดที่ว่างอยู่"
                         ),
                     },
@@ -128,10 +124,11 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "search_knowledge_base",
             "description": (
-                "ค้นข้อมูลรีสอร์ทที่ไม่ได้อยู่ในระบบจอง เช่น ค่าเตียงเสริม เงินมัดจำ "
-                "นโยบายการยกเลิก เวลาเช็คอิน-เช็คเอาท์ การเดินทาง สิ่งอำนวยความสะดวกส่วนกลาง "
-                "สัตว์เลี้ยง และคำถามทั่วไปเกี่ยวกับรีสอร์ท "
-                "ห้ามใช้ tool นี้หาราคาห้องหรือห้องว่าง เพราะคลังความรู้ไม่มีข้อมูลสองอย่างนั้น"
+                "ค้นข้อมูลรีสอร์ทที่ไม่ได้อยู่ในระบบจอง เช่น ค่าเตียงเสริมและวิธีขอ "
+                "ขั้นตอนการชำระเงินโดยรวม นโยบายการยกเลิก เวลาเช็คอิน-เช็คเอาท์ การเดินทาง "
+                "สิ่งอำนวยความสะดวกส่วนกลาง สัตว์เลี้ยง และคำถามทั่วไปเกี่ยวกับรีสอร์ท "
+                "ห้ามใช้ tool นี้หาราคาห้อง ห้องว่าง ของในห้อง เลขพร้อมเพย์ หรือเวลาที่ต้องชำระ "
+                "เพราะคลังความรู้ไม่มีข้อมูลพวกนั้น"
             ),
             "parameters": {
                 "type": "object",
@@ -150,8 +147,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "get_payment_info",
             "description": (
-                "ดูวิธีชำระเงินและระยะเวลาที่ระบบกันห้องไว้ให้ก่อนยกเลิกอัตโนมัติ "
-                "ใช้เมื่อลูกค้าถามว่าจ่ายเงินอย่างไร หรือต้องจ่ายภายในกี่นาที"
+                "ดูเลขพร้อมเพย์ (promptPayId) ชื่อบัญชี และระยะเวลาที่ระบบกันห้องไว้ให้ก่อน "
+                "ยกเลิกอัตโนมัติ (holdMinutes นาที) ใช้เมื่อลูกค้าถามว่าจ่ายเงินอย่างไร "
+                "โอนเข้าเลขอะไร หรือต้องจ่าย/อัปโหลดสลิปภายในกี่นาที"
             ),
             "parameters": {"type": "object", "properties": {}},
         },
@@ -170,9 +168,23 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "name": "get_my_bookings",
             "description": (
                 "ดูรายการจองของลูกค้าคนที่กำลังคุยอยู่ ใช้เมื่อลูกค้าถามถึงการจองของตัวเอง "
-                "เช่น จองไว้วันไหน สถานะเป็นอย่างไร ยอดเท่าไหร่"
+                "เช่น จองไว้วันไหน สถานะเป็นอย่างไร ยอดเท่าไหร่ "
+                "ผลลัพธ์ปกติมีเฉพาะการจองที่ยังไม่ถึงหรือกำลังพักอยู่ (currentBookings) "
+                "และจำนวนรายการที่ผ่านไปแล้ว (pastBookingsCount)"
             ),
-            "parameters": {"type": "object", "properties": {}},
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "include_past": {
+                        "type": "boolean",
+                        "description": (
+                            "true เฉพาะเมื่อลูกค้าถามถึงประวัติหรือการจองที่ผ่านไปแล้ว "
+                            "เช่น 'เคยจองอะไรบ้าง' 'ประวัติการจอง' 'ครั้งที่แล้ว' "
+                            "นอกนั้นไม่ต้องส่ง"
+                        ),
+                    }
+                },
+            },
         },
     },
     {
@@ -212,12 +224,16 @@ class ToolExecutor:
         vector_store: VectorStore,
         language: str = "th",
         customer_token: str | None = None,
+        today: str | None = None,
     ):
         self.booking_client = booking_client
         self.embedding_service = embedding_service
         self.vector_store = vector_store
         self.language = language
         self.customer_token = customer_token
+        #: วันนี้ตามเวลาไทย (YYYY-MM-DD) ใช้แยกการจองปัจจุบันกับประวัติ — ส่งมาจาก
+        #: rag_pipeline ให้ตรงกับ {today} ใน SYSTEM_PROMPT
+        self.today = today or date.today().isoformat()
         self.knowledge_hits: list[dict[str, Any]] = []
         self.called_tools: list[str] = []
         #: tool ที่เรียกแล้วได้ข้อมูลกลับมาจริง ไม่ใช่ error — ใช้ตัดสิน ChatResponse.confidence
@@ -242,16 +258,21 @@ class ToolExecutor:
 
     async def _dispatch(self, name: str, arguments: dict[str, Any]) -> Any:
         if name == "search_available_rooms":
-            return await self.booking_client.search_rooms(
+            rooms = await self.booking_client.search_rooms(
                 check_in=arguments["check_in"], check_out=arguments["check_out"]
             )
+            # กติกาเรื่องเตียงเสริมอยู่ใน SYSTEM_PROMPT แล้ว แต่ทดสอบจริงโมเดลยังข้ามการค้นคลังความรู้
+            # แล้วแต่งค่าเตียงเสริมขึ้นเอง ("คืนละ 300 บาท" ทั้งที่จริงคือ 200) ติด note ไว้กับผล tool
+            # เพราะโมเดลยึดสิ่งที่อยู่ในผล tool มากกว่าร้อยแก้วใน prompt
+            # ตัวเลขยังไม่ใส่ในโค้ดโดยตั้งใจ — คลังความรู้เป็นเจ้าของค่าเตียงเสริม
+            return {"rooms": rooms, "note": _ROOMS_NOTE}
         if name == "quote_price":
+            # ไม่อ่าน extra_beds / extra_bed_price_per_night โดยตั้งใจ ถ้าโมเดลยังส่งมา
+            # (จำ schema เก่า) ให้เพิกเฉย ไม่ใช่ error — ยอดต้องเป็นค่าห้องอย่างเดียวเสมอ
             return await self.booking_client.quote_stay(
                 check_in=arguments["check_in"],
                 check_out=arguments["check_out"],
                 rooms=int(arguments.get("rooms") or 1),
-                extra_beds=int(arguments.get("extra_beds") or 0),
-                extra_bed_price_per_night=arguments.get("extra_bed_price_per_night"),
                 room_name=arguments.get("room_name"),
             )
         if name == "search_knowledge_base":
@@ -263,7 +284,12 @@ class ToolExecutor:
         if name == "get_my_bookings":
             if not self.customer_token:
                 return _LOGIN_REQUIRED
-            return await self.booking_client.get_my_bookings(self.customer_token)
+            bookings = await self.booking_client.get_my_bookings(self.customer_token)
+            return group_bookings(
+                bookings,
+                today=self.today,
+                include_past=bool(arguments.get("include_past")),
+            )
         if name == "get_booking_payment":
             if not self.customer_token:
                 return _LOGIN_REQUIRED

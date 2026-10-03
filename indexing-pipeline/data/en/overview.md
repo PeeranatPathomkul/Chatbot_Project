@@ -10,12 +10,11 @@ title: Resort Overview
 Poonsuk Resort (Poonsuk Resort @Sadao) is located in Sadao District, Songkhla Province, Thailand.
 It is a Nordic-style accommodation where each room is a separate small private house,
 set in quiet, shaded and peaceful surroundings.
-The resort has 6 rooms in total, each 16 square metres, in 2 types:
-twin-bed rooms (twin) and single-bed rooms (single). Which room is which type is
-available from the booking system.
+Each room is 16 square metres, in 2 types:
+twin-bed rooms (twin) and single-bed rooms (single). The number of rooms and which room
+is which type are available from the booking system.
 
-Highlights: clean and spacious rooms, air conditioning, free Wi-Fi, a private bathroom in every
-room, convenient and secure parking, and a quiet, private, green setting that feels like a second home.
+Highlights: clean rooms, free Wi-Fi, detached rooms each with a private bathroom, convenient and secure parking, and a quiet, private, green setting that feels like a second home.
 Best suited for: guests who want privacy and quiet, travellers visiting Sadao on business,
 and small families.
 
@@ -31,9 +30,10 @@ Front desk hours: <<TODO: front desk operating hours, e.g. 08:00-20:00>>
 The resort has no LINE Official account
 
 ## Booking
-Book by calling 081-598-1199 or messaging Facebook: Poonsuk Resort Sadao.
-A booking is confirmed once the 200 THB deposit has been transferred to
-PromptPay number 081-599-3128. The resort accepts bank transfer only —
+The main booking channel is the resort's app.
+Call 081-598-1199 or message Facebook: Poonsuk Resort Sadao for enquiries and extra bed requests.
+Guests pay the full room charge in the app in a single payment with a PromptPay QR code, then upload
+the slip in the app within the time limit shown in the app. The resort accepts bank transfer only —
 no cash and no credit cards.
 Booking via travel apps: <<TODO: whether the resort is listed on Agoda / Booking.com / Airbnb>>
 
@@ -44,7 +44,9 @@ Our staff speak: <<TODO: languages spoken by staff, e.g. Thai, English, Malay>>
 Check-in from 2:00 PM until 10:00 PM / check-out by 12:00 noon.
 The nightly room rate and the number of guests each room sleeps are available from the
 booking system. The rate is the same every day, with no weekend surcharge.
-An extra bed costs 200 THB per night, one per room.
+An extra bed costs 200 THB per night, at most one per room. Request it by calling 081-598-1199;
+it is paid at the resort on the day of check-in.
+Bookings can be cancelled in the app before the check-in date only.
 No pets are allowed, and smoking is not permitted inside the rooms.
 Breakfast is not provided.
 Full details are in the "Booking and Stay Policy" section.

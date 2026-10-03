@@ -71,6 +71,13 @@ copy .env.example .env
 
 แล้วกรอกค่า `TYPHOON_API_KEY` (หรือ `GEMINI_API_KEY` ถ้าตั้ง `LLM_PROVIDER=gemini`) ใน `.env`
 
+และกรอก `BOOKING_API_INTERNAL_KEY` ให้ตรงกับ `CHATBOT_INTERNAL_KEY` ใน
+`tourist-booking-application/backend/.env` บอทจะแนบค่านี้เป็น header `X-Internal-Key`
+ทุกครั้งที่เรียก Booking API เพื่อให้ NestJS ไม่นับ rate limit ให้ (120 ครั้ง/นาที/IP —
+คำขอของลูกค้าทุกคนออกจาก IP เดียวของบอทจึงโดน 429 ง่าย) ยกเว้นเฉพาะ GET เท่านั้น
+**key นี้ไม่ได้ให้สิทธิ์อ่านข้อมูลเพิ่ม** `/bookings/me` ยังต้องใช้ JWT ของลูกค้าคนนั้น
+ปล่อยว่างก็รันได้ แค่จะโดน rate limit ห้าม commit ค่าจริง
+
 ### 3. สร้างคลังความรู้ (ทำที่โปรเจกต์ indexing-pipeline)
 
 API เป็นแค่ผู้อ่าน vector store ไม่ได้เป็นคนสร้าง ต้อง index ข้อมูลจากอีกโปรเจกต์ก่อน
@@ -145,7 +152,8 @@ POST /api/v1/chatbot/query   (Authorization: Bearer <token ของลูกค
   ├─ 2. llm_client.generate(messages, tools)   โมเดลเลือกเรียก tool
   │        ├─ search_available_rooms  -> Booking API (ห้องว่างจริง + ราคาจาก DB)
   │        ├─ search_knowledge_base   -> ChromaDB (นโยบาย ค่าเตียงเสริม การเดินทาง)
-  │        ├─ get_payment_info        -> Booking API
+  │        ├─ quote_price             -> Booking API (คิดค่าห้องรวมในโค้ด ไม่รวมเตียงเสริม)
+  │        ├─ get_payment_info        -> Booking API (เลขพร้อมเพย์ + holdMinutes)
   │        ├─ list_restaurants        -> Booking API
   │        └─ get_my_bookings /
   │           get_booking_payment     -> Booking API (ต้องมี token ของลูกค้า)
@@ -162,11 +170,20 @@ POST /api/v1/chatbot/query   (Authorization: Bearer <token ของลูกค
 
 | ข้อมูล | เจ้าของ | เหตุผล |
 |---|---|---|
-| ห้องว่าง ราคาห้อง ชื่อห้อง capacity สิ่งอำนวยความสะดวกในห้อง | Booking API (PostgreSQL) | เปลี่ยนได้ตลอด staff แก้ที่เดียว |
-| ค่าเตียงเสริม มัดจำ นโยบายยกเลิก เวลาเช็คอิน การเดินทาง | ChromaDB | ไม่มีใน DB |
+| ห้องว่าง ราคาห้อง ชื่อ/จำนวนห้อง capacity สิ่งอำนวยความสะดวกในห้อง (ต่างกันรายห้อง) | Booking API (PostgreSQL) | เปลี่ยนได้ตลอด staff แก้ที่เดียว |
+| เลขพร้อมเพย์ เวลากันห้องก่อนยกเลิกอัตโนมัติ (`holdMinutes`) | Booking API (`/payment/info`) | อยู่ใน config ของ backend |
+| ค่าเตียงเสริมและวิธีขอ ขั้นตอนชำระเงินโดยรวม นโยบายยกเลิก เวลาเช็คอิน การเดินทาง ของส่วนกลาง | ChromaDB | ไม่มีใน DB |
 
-ราคาถูกถอดออกจาก `../indexing-pipeline/data/**.md` หมดแล้ว **อย่าเติมกลับเข้าไป** ไม่งั้น
-จะมีราคาสองแหล่งที่ขัดกันเอง แล้วบอทจะเสนอราคาที่ไม่ตรงกับที่ลูกค้าจองจริงได้
+ราคา รายชื่อห้อง ของในห้อง เลขพร้อมเพย์ และเวลากันห้องถูกถอดออกจาก
+`../indexing-pipeline/data/**.md` หมดแล้ว **อย่าเติมกลับเข้าไป** ไม่งั้นจะมีสองแหล่งที่ขัดกันเอง
+แล้วบอทจะตอบไม่ตรงกับที่ลูกค้าเห็นในแอป
+
+**ไม่มีมัดจำ** — ลูกค้าจ่ายค่าห้องเต็มจำนวนในแอป (สแกน QR พร้อมเพย์ + อัปโหลดสลิปภายใน
+`holdMinutes` นาที) ยอดจาก `quote_price` จึงเป็นค่าห้องอย่างเดียวให้ตรงกับยอดที่แอปเก็บ
+
+**เตียงเสริมเป็นแค่ข้อมูลในแชท** — ระบบจองไม่รองรับเตียงเสริม และ `POST /api/bookings`
+ตอบ 400 เมื่อ `guests > capacity` บอทจึงแนะนำให้จองในแอปตาม capacity แล้วโทรขอเตียงเสริม
+(ค่าเตียงเสริมชำระที่รีสอร์ทวันเช็คอิน และไม่ถูกบวกเข้ายอดรวม)
 
 **ทำไมไม่ต่อ PostgreSQL ตรง ๆ** — "ห้องว่างไหม" ไม่ใช่ค่าที่เก็บอยู่ในตาราง แต่เป็นผลที่
 API คำนวณจาก booking ที่มีอยู่ด้วยกติกาช่วงวันที่แบบ half-open `[checkIn, checkOut)`

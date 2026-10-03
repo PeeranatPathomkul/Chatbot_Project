@@ -76,6 +76,25 @@ _NO_TOOL_REFUSAL_NUDGE = (
     "ถ้าคำถามไม่ได้ระบุวันที่ ให้ใช้ช่วงวันนี้ถึงพรุ่งนี้"
 )
 
+#: กระทุ้งเมื่อคำตอบพูดถึงเตียงเสริมโดยยังไม่ได้ค้นคลังความรู้
+#:
+#: ทดสอบจริงหลังเลิกส่ง maxGuestsWithExtraBed: ถาม "มา 3 คน พักห้องเดียวได้ไหม"
+#: โมเดลเรียกแค่ search_available_rooms แล้วตอบ "เตียงเสริมคืนละ 300 บาท" ทุกรอบ
+#: (ที่จริงคือ 200 ซึ่งคลังความรู้เป็นเจ้าของ) ทั้งที่ทั้ง SYSTEM_PROMPT และ note ในผล tool
+#: สั่งให้ค้นก่อนแล้ว จึงดักด้วยโค้ดอีกชั้นเหมือน _NO_TOOL_REFUSAL_NUDGE
+#: ไม่ใส่ตัวเลขในโค้ดโดยตั้งใจ — แค่บังคับให้ไปเอาจากแหล่งจริง
+_EXTRA_BED_NUDGE = (
+    "คำตอบของคุณพูดถึงเตียงเสริม แต่ยังไม่ได้เรียก search_knowledge_base เลย "
+    "ตัวเลขค่าเตียงเสริมในคำตอบนั้นจึงไม่ได้มาจากแหล่งจริง ให้เรียก search_knowledge_base "
+    "ค้น 'ค่าเตียงเสริม' ก่อน แล้วตอบใหม่ทั้งหมดโดยใช้อัตราจากผลการค้นเท่านั้น"
+)
+_EXTRA_BED_WORDS = ("เตียงเสริม", "extra bed")
+
+
+def _mentions_extra_bed(answer_text: str) -> bool:
+    lowered = answer_text.lower()
+    return any(word in lowered for word in _EXTRA_BED_WORDS)
+
 
 def _is_refusal(answer_text: str, refusal: str) -> bool:
     """คำตอบนี้คือการปฏิเสธล้วน ๆ หรือเปล่า
@@ -122,6 +141,7 @@ class RAGPipeline:
             language if language in settings.supported_languages else settings.default_language
         )
         refusal = no_context_answer(language)
+        today = _today_in_thailand()
 
         executor = ToolExecutor(
             booking_client=self.booking_client,
@@ -129,13 +149,14 @@ class RAGPipeline:
             vector_store=self.vector_store,
             language=language,
             customer_token=customer_token,
+            today=today,
         )
 
         messages: list[dict] = [
             {
                 "role": "system",
                 "content": SYSTEM_PROMPT.format(
-                    language=language, refusal=refusal, today=_today_in_thailand()
+                    language=language, refusal=refusal, today=today
                 ),
             },
             {"role": "user", "content": message},
@@ -144,6 +165,7 @@ class RAGPipeline:
         totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         answer_text = ""
         nudged = False
+        extra_bed_nudged = False
 
         for round_index in range(settings.agent_max_tool_rounds + 1):
             # รอบสุดท้ายไม่ส่ง tools ไปด้วย เพื่อบังคับให้โมเดลสรุปเป็นข้อความ
@@ -167,6 +189,16 @@ class RAGPipeline:
                     nudged = True
                     messages.append({"role": "assistant", "content": answer_text})
                     messages.append({"role": "user", "content": _NO_TOOL_REFUSAL_NUDGE})
+                    continue
+                if (
+                    not extra_bed_nudged
+                    and not is_final_round
+                    and "search_knowledge_base" not in executor.called_tools
+                    and _mentions_extra_bed(answer_text)
+                ):
+                    extra_bed_nudged = True
+                    messages.append({"role": "assistant", "content": answer_text})
+                    messages.append({"role": "user", "content": _EXTRA_BED_NUDGE})
                     continue
                 break
 

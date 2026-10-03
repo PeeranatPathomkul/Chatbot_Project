@@ -33,46 +33,45 @@ Q: How big are the rooms?
 A: Every room is 16 square metres (4 x 4 metres).
 
 Q: How many people can stay in one room?
-A: How many guests a room sleeps is available from the booking system. One more guest can be added per room with an extra bed, which costs 200 THB per night.
+A: How many guests each room can be booked for in the app is available from the booking system. If you have one guest more than that, book in the app for the number the room allows, then call 081-598-1199 to request an extra bed, 200 THB per bed per night, paid at the resort on the day of check-in.
 
 Q: Can I request an extra bed? How much is it?
-A: Yes, one extra bed can be added to any room for 200 THB per bed per night, on top of the room rate. Please request it when you book.
+A: Yes, at most one extra bed per room, 200 THB per bed per night. To request one, book in the app for the number of guests the room allows, then call the owner on 081-598-1199. The extra bed fee is paid at the resort on the day of check-in and is not included in the amount paid in the app.
+
+Q: We are 3 people. Can we book one room in the app?
+A: The app accepts no more guests than the room allows. If you have one guest more than that, book in the app for the number the room allows, then call 081-598-1199 to request an extra bed (200 THB per bed per night, paid at the resort on check-in day), or book another room.
 
 Q: Do children stay free?
-A: The resort charges per room rather than per person, so there is no separate child policy. Children stay at no extra cost as long as the total number of guests fits the room. If you need an additional bed, the 200 THB per night extra bed fee applies.
+A: The resort charges per room rather than per person, so there is no separate child policy. Children stay at no extra cost as long as the total number of guests fits the room. If you need an additional bed, the 200 THB per night extra bed fee applies, paid at the resort on the day of check-in.
 
 Q: How do I book a room?
-A: Call 081-598-1199 or message Facebook: Poonsuk Resort Sadao. Your booking is confirmed once the 200 THB deposit has been transferred.
+A: Book through the resort's app, which is the main booking channel. For questions or to request an extra bed, call 081-598-1199 or message Facebook: Poonsuk Resort Sadao.
 
-Q: How much is the deposit and how do I pay it?
-A: The deposit is 200 THB, transferred to PromptPay number 081-599-3128. The balance is paid on the day of check-in.
+Q: How do I pay? Do I pay part up front?
+A: No part-payment is needed. You pay the full room charge in the app in a single payment by scanning the PromptPay QR code in the app, then uploading the slip in the app within the time limit shown in the app. If the slip is not uploaded in time, the booking is cancelled automatically and you can book again. Staff then check the slip and confirm the booking.
 
-Q: Why is the PromptPay number different from the resort's phone number?
-A: The PromptPay number for transfers is 081-599-3128, which differs from the contact number 081-598-1199. Both numbers belong to the resort — one is the line for enquiries and the other is the number linked to the payment account. If you are unsure, call 081-598-1199 to confirm before transferring.
+Q: Which PromptPay number do I transfer to?
+A: The PromptPay number and QR code for the transfer are shown in the app at the payment step. Please transfer to what the app shows.
 
 Q: Can I pay in cash or by credit card?
 A: No. The resort accepts bank transfer only — no cash and no credit cards.
 
 Q: Can I get a refund if I cancel?
-A: You may cancel at any time, but the 200 THB deposit is non-refundable in all cases, no matter how far in advance you cancel.
+A: You can cancel a booking yourself in the app, but only before the check-in date. If you have already paid, the system records a refund automatically and staff transfer the money back.
+Full refund: <<TODO: whether the refund is the full amount>>
+Refund timing: <<TODO: how many days the refund takes>>
 
 Q: What is in the room?
-A: Every room has air conditioning, a TV, a refrigerator, an electric kettle with complimentary instant coffee, free Wi-Fi, a private bathroom with a water heater, towels, soap, shampoo, a hairdryer, and a table and chairs for relaxing.
+A: In-room amenities differ from room to room. You can see each room's amenities in the app, or ask the chatbot together with your stay dates.
 
-Q: Do the rooms have air conditioning?
-A: Yes, every room is air conditioned.
-
-Q: Is there hot water?
-A: Yes, every bathroom has a water heater.
-
-Q: Do the rooms have a TV and a fridge?
-A: Yes, every room has both a TV and a refrigerator.
+Q: Does the room have a TV or other in-room items?
+A: It depends on the room. You can see each room's amenities in the app, or ask the chatbot together with your stay dates.
 
 Q: Is breakfast included?
-A: No. The resort does not serve breakfast and has no restaurant. The room rate covers the room only. Complimentary instant coffee sachets are provided in the room.
+A: No. The resort does not serve breakfast and has no restaurant. The room rate covers the room only.
 
 Q: Is there free Wi-Fi?
-A: Yes, free Wi-Fi is available in every room at no extra charge.
+A: Yes, free Wi-Fi is available at no extra charge.
 
 Q: Is parking free? How many cars can park?
 A: Yes, parking is free for guests. There is space for 4 cars, and the car park is covered by CCTV.
@@ -87,7 +86,7 @@ Q: Can I smoke in the room?
 A: No. All rooms are non-smoking and smoking inside the rooms is not permitted.
 
 Q: Is there a swimming pool?
-A: No. The resort is a small 6-room property focused on quiet and privacy, and has no pool.
+A: No, there is no swimming pool. The resort is a small property focused on quiet and privacy.
 
 Q: Is there a restaurant at the resort?
 A: No. Guests can eat at the shops and markets nearby, about 5 minutes away by car.
@@ -107,7 +106,7 @@ Q: How far is Lotus's or the market from the resort?
 A: Not far. Lotus's and Sadao Market are about 5 minutes away by car.
 
 Q: Does each room have a private bathroom?
-A: Yes. Every room has its own clean, private bathroom inside the room, with a water heater.
+A: Yes. Each room is a detached house with its own private bathroom.
 
 Q: What are the rooms like?
-A: Each room is a Nordic-style detached small house of 16 square metres. The rooms are clean and spacious, with air conditioning, free Wi-Fi, a private bathroom, and a table and chairs for relaxing inside the room.
+A: Each room is a Nordic-style detached small house of 16 square metres with a private bathroom. In-room amenities differ from room to room and can be seen in the app.
