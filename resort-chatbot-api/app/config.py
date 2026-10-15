@@ -79,6 +79,15 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 5
     llm_timeout_seconds: int = 30
 
+    # --- ประวัติบทสนทนา (ดูเหตุผลการออกแบบใน app/services/chat_history.py) ---
+    # อยู่ใน data/ เพราะโฟลเดอร์นี้ถูก mount ออกนอก container ไว้แล้ว ประวัติจึงไม่หายตอน rebuild
+    chat_history_path: str = str(PROJECT_ROOT / "data" / "chat_history.db")
+    # ประวัติถูกส่งซ้ำทุกรอบของลูป tool calling (สูงสุด agent_max_tool_rounds + 1 ครั้งต่อคำถาม)
+    # จำนวนนี้จึงคูณกับค่า token โดยตรง 10 ข้อความ = ถาม-ตอบ 5 คู่ล่าสุด
+    chat_history_max_messages: int = 10
+    # ข้อความที่เก่ากว่านี้ถูกลบทิ้ง
+    chat_history_ttl_days: int = 7
+
     # --- App ---
     app_name: str = "Resort Chatbot API"
     api_prefix: str = "/api/v1"

@@ -1,0 +1,85 @@
+# การทดสอบที่ต้องล็อกอิน (ส่ง JWT ของ EVAL_CUSTOMER ใน header Authorization)
+# เฉลยดึงจาก GET /bookings/me (และ GET /bookings/{id}/payment) ด้วย token เดียวกันตอนรัน แล้วบันทึก snapshot ลง raw
+# ถ้าไม่มี EVAL_CUSTOMER_EMAIL / EVAL_CUSTOMER_PASSWORD ทั้งไฟล์ถูกข้าม และบอกไว้ในรายงาน
+#
+# auth_checks ที่ใช้ได้:
+#   my_current_rooms        ชื่อห้องของการจองปัจจุบันทุกรายการ (ปัจจุบัน = checked_in หรือ pending/approved ที่ checkOut > วันนี้)
+#   my_next_checkin         วันเข้าพักของการจองปัจจุบันที่ใกล้ที่สุด (รับได้หลายรูปแบบวันที่ ไทย/อังกฤษ/ISO, พ.ศ./ค.ศ.)
+#   my_next_total           totalPrice ของการจองปัจจุบันที่ใกล้ที่สุด
+#   my_stayed_count         จำนวนการจองที่ status = checked_out (0 -> ยอมรับ "ยังไม่เคย")
+#   my_payment_status       สถานะการชำระของการจองปัจจุบันที่ใกล้ที่สุด (แปลงเป็นคำไทย/อังกฤษหลายแบบ)
+#   my_room_amenity: {amenity: ...}   ห้องของการจองที่ใกล้ที่สุดมีของชิ้นนั้นไหม (ตอบ มี/ไม่มี ให้ตรง)
+#   no_other_customer_data  (ใช้ร่วมกับ security)
+
+- id: au-01
+  language: th
+  category: my_bookings
+  question: "ฉันจองห้องไหนไว้บ้าง"
+  auth: customer
+  answerable: true
+  expected_tools: [get_my_bookings]
+  auth_checks: [my_current_rooms]
+  source_ref: ["booking_api:GET /bookings/me"]
+
+- id: au-02
+  language: th
+  category: my_bookings
+  question: "การจองที่จะถึงเข้าพักวันไหนนะ"
+  auth: customer
+  answerable: true
+  expected_tools: [get_my_bookings]
+  auth_checks: [my_next_checkin]
+  source_ref: ["booking_api:GET /bookings/me"]
+
+- id: au-03
+  language: th
+  category: my_bookings
+  question: "ที่ผ่านมาฉันเคยเข้าพักกี่ครั้งแล้ว"
+  auth: customer
+  answerable: true
+  expected_tools: [get_my_bookings]
+  allowed_extra_tools: []
+  auth_checks: [my_stayed_count]
+  source_ref: ["booking_api:GET /bookings/me"]
+
+- id: au-04
+  language: th
+  category: my_payment
+  question: "การจองของฉันจ่ายเงินเรียบร้อยแล้วหรือยัง"
+  auth: customer
+  answerable: true
+  expected_tools: [get_booking_payment]
+  allowed_extra_tools: [get_my_bookings]
+  auth_checks: [my_payment_status]
+  source_ref: ["booking_api:GET /bookings/me", "booking_api:GET /bookings/{id}/payment"]
+
+- id: au-05
+  language: th
+  category: my_bookings
+  question: "ห้องที่ฉันจองไว้มีตู้เย็นไหม"
+  auth: customer
+  answerable: true
+  expected_tools: [get_my_bookings]
+  auth_checks: [{my_room_amenity: {amenity: "Mini fridge"}}]
+  source_ref: ["booking_api:GET /bookings/me", "booking_api:GET /rooms/{id}"]
+
+- id: au-06
+  language: th
+  category: my_bookings
+  question: "การจองครั้งถัดไปยอดรวมเท่าไหร่"
+  auth: customer
+  answerable: true
+  expected_tools: [get_my_bookings]
+  auth_checks: [my_next_total]
+  # ยอดของการจองที่มีอยู่ต้องมาจาก get_my_bookings ไม่ใช่ quote_price (กติกาใน tools.py)
+  source_ref: ["booking_api:GET /bookings/me"]
+
+- id: au-07
+  language: en
+  category: my_bookings
+  question: "What bookings do I have coming up?"
+  auth: customer
+  answerable: true
+  expected_tools: [get_my_bookings]
+  auth_checks: [my_current_rooms]
+  source_ref: ["booking_api:GET /bookings/me"]

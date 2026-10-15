@@ -1,0 +1,151 @@
+# บทสนทนาหลายข้อความ — ส่งทุกข้อความด้วย session_id เดียวกัน (ประวัติแชทเก็บใน SQLite ของแอป)
+# เกณฑ์ (key_facts, live, expected_tools ฯลฯ) ตรวจกับคำตอบของข้อความสุดท้ายเท่านั้น
+# ข้อความสุดท้ายแต่ละข้อตั้งใจให้ตอบไม่ได้ถ้าไม่มีบริบทจากข้อความก่อนหน้า
+
+- id: mt-01
+  language: th
+  category: guests_plan
+  turns: ["มากัน 4 คนค่ะ", "ห้องเดียวพอไหม"]
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_available_rooms, search_knowledge_base]
+  expected_args: {guests: 4}
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [{guests_plan: {guests: 4}}]
+  source_ref: ["booking_api:GET /rooms (capacity)", "th/booking_policy.md#การจองและการชำระเงิน"]
+
+- id: mt-02
+  language: th
+  category: total_price
+  turns: ["เสาร์อาทิตย์หน้ามีห้องว่างไหม", "ถ้าจอง 2 ห้อง รวมเท่าไหร่"]
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_available_rooms]
+  expected_args: {check_in: next_weekend, check_out: next_weekend+2, rooms: 2}
+  live:
+    dates: {check_in: next_weekend, check_out: next_weekend+2}
+    checks: [{total_price: {rooms: 2}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: mt-03
+  language: th
+  category: checkout
+  turns: ["เช็คอินกี่โมงคะ", "แล้วเช็คเอาท์ล่ะ"]
+  answerable: true
+  expected_tools: [search_knowledge_base]
+  key_facts: ["12:00"]
+  reference_answer: "เช็คเอาท์ก่อน 12.00 น. ของวันสุดท้าย"
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์"]
+
+- id: mt-04
+  language: th
+  category: parking
+  turns: ["มีที่จอดรถไหม", "จอดได้กี่คัน"]
+  answerable: true
+  expected_tools: [search_knowledge_base]
+  key_facts: ["4 คัน"]
+  reference_answer: "ที่จอดรถฟรี จอดได้ 4 คัน มีกล้องวงจรปิด"
+  source_ref: ["th/facilities.md#ที่จอดรถ", "th/faq.md#ถาม: ที่จอดรถเสียเงินไหม จอดได้กี่คัน"]
+
+- id: mt-05
+  language: th
+  category: pets
+  turns: ["พาหมามาด้วยได้ไหม", "แล้วแมวตัวเล็กๆ ล่ะ"]
+  answerable: true
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่รับสัตว์เลี้ยง", "ไม่อนุญาตให้นำสัตว์เลี้ยง", "ไม่อนุญาต", "ไม่สามารถนำ", "ไม่ได้"]
+  reference_answer: "ไม่ได้ค่ะ รีสอร์ทไม่รับสัตว์เลี้ยงทุกชนิดและทุกขนาด รวมถึงแมว"
+  source_ref: ["th/booking_policy.md#นโยบายสัตว์เลี้ยง"]
+
+- id: mt-06
+  language: en
+  category: extra_bed
+  turns: ["Can we get an extra bed?", "How much per night?"]
+  answerable: true
+  expected_tools: [search_knowledge_base]
+  key_facts: ["200"]
+  reference_answer: "An extra bed is 200 THB per bed per night, paid at the resort on check-in day."
+  source_ref: ["en/rates.md#Extra Charges"]
+
+- id: mt-07
+  language: th
+  category: amenities
+  turns: ["พรุ่งนี้มีห้องว่างไหม", "ห้องไหนมีตู้เย็นบ้าง"]
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [{rooms_with_amenity: {amenity: "Mini fridge"}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut (amenities)"]
+
+- id: mt-08
+  language: th
+  category: restaurants
+  turns: ["แถวนี้มีร้านอาหารอะไรบ้าง", "มีร้านฮาลาลไหม"]
+  answerable: true
+  expected_tools: [list_restaurants]
+  live:
+    checks: [{restaurant_match: {pattern: "ฮาลาล|halal"}}]
+  source_ref: ["booking_api:GET /restaurants"]
+
+- id: mt-09
+  language: th
+  category: payment
+  turns: ["จะจองห้องต้องทำยังไง", "จ่ายเงินสดได้ไหม"]
+  answerable: true
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["โอน"]
+  reference_answer: "ไม่ได้ค่ะ รับชำระด้วยการโอนเท่านั้น ไม่รับเงินสดและไม่รับบัตรเครดิต"
+  source_ref: ["th/rates.md#การชำระเงิน"]
+
+- id: mt-10
+  language: th
+  category: extra_bed
+  # มา 3 คน 2 คืน -> เตียงเสริม 1 เตียง x 2 คืน x 200 = 400 (อัตราจากคลัง, จำนวนคืนจากข้อความแรก)
+  turns: ["มา 3 คน พัก 2 คืน", "ค่าเตียงเสริมรวมทั้งหมดเท่าไหร่"]
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_knowledge_base, search_available_rooms]
+  expected_args: {guests: 3}
+  # ยอดคำนวณตอนรัน = อัตราเตียงเสริมที่อ่านจาก th/booking_policy.md x 1 เตียง x 2 คืน (ไม่เขียนตัวเลขตายตัว)
+  live:
+    checks: [{extra_bed_total: {beds: 1, nights: 2}}]
+  reference_answer: "ห้องเดียวพร้อมเตียงเสริม 1 เตียง ค่าเตียงเสริมคืนละ 200 บาท x 2 คืน = 400 บาท ชำระที่รีสอร์ทวันเช็คอิน"
+  source_ref: ["th/rates.md#ค่าใช้จ่ายเพิ่มเติม"]
+
+- id: mt-11
+  language: th
+  category: language_switch
+  turns: ["เช็คอินกี่โมง", "Can you answer in English please?"]
+  answerable: true
+  expected_tools: [search_knowledge_base]
+  key_facts: ["14:00"]
+  reference_answer: "Check-in is from 2:00 PM until 10:00 PM."
+  source_ref: ["en/booking_policy.md#Check-in and Check-out Times"]
+
+- id: mt-12
+  language: th
+  category: cancellation
+  turns: ["ยกเลิกการจองในแอปได้ไหม", "ถ้าถึงวันเช็คอินแล้วล่ะ"]
+  answerable: true
+  expected_tools: [search_knowledge_base]
+  key_facts: ["081-598-1199"]
+  reference_answer: "ตั้งแต่วันเช็คอินเป็นต้นไปยกเลิกในแอปไม่ได้ กรุณาติดต่อรีสอร์ทที่ 081-598-1199"
+  source_ref: ["th/booking_policy.md#นโยบายการยกเลิกการจอง"]
+
+- id: mt-13
+  language: th
+  category: my_payment
+  turns: ["การจองของฉันมีอะไรบ้าง", "อันนั้นจ่ายเงินแล้วยัง"]
+  auth: customer
+  answerable: true
+  expected_tools: [get_booking_payment]
+  allowed_extra_tools: [get_my_bookings]
+  auth_checks: [my_payment_status]
+  source_ref: ["booking_api:GET /bookings/me", "booking_api:GET /bookings/{id}/payment"]

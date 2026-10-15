@@ -1,0 +1,8 @@
+# ค่าลับของ harness (บัญชีทดสอบ, internal key) — ห้ามขึ้น repo
+.env
+
+# ประวัติแชทและ cache ระหว่างรันประเมิน
+.state/
+
+__pycache__/
+.pytest_cache/

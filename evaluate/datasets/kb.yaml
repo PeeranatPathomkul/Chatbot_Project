@@ -1,0 +1,321 @@
+# คำถามที่ตอบได้จากคลังความรู้ (indexing-pipeline/data) — โครงสร้างดู SCHEMA.md
+# เฉลยทุกข้อคัดจากไฟล์ใน source_ref (validator ตรวจว่า key_facts มีอยู่ในไฟล์นั้นจริง)
+
+- id: kb-th-01
+  language: th
+  category: checkin
+  question: "ถ้าไปถึงสี่ทุ่มครึ่ง ยังเช็คอินได้ไหมคะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["22:00", "081-598-1199"]
+  reference_answer: "รับเช็คอินได้ถึง 22.00 น. ถ้ามาถึงหลัง 22.00 น. กรุณาโทรแจ้งล่วงหน้าที่ 081-598-1199"
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: เช็คอินได้ตั้งแต่กี่โมง"]
+  consistency_subset: true
+
+- id: kb-th-02
+  language: th
+  category: luggage
+  question: "มาถึงเที่ยง ฝากกระเป๋าไว้ก่อนได้มั้ย"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีบริการรับฝากกระเป๋า", "ไม่รับฝากกระเป๋า", "ฝากกระเป๋าไม่ได้", "ไม่สามารถฝาก"]
+  reference_answer: "ไม่ได้ค่ะ รีสอร์ทไม่มีบริการรับฝากกระเป๋า และไม่รับเช็คอินก่อน 14.00 น."
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: มาถึงก่อนเวลาเช็คอิน ฝากกระเป๋าไว้ก่อนได้ไหม"]
+
+- id: kb-th-03
+  language: th
+  category: price_policy
+  question: "วันเสาร์อาทิตย์ราคาแพงขึ้นไหม"
+  answerable: true
+  expected_sources: [th/rates.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [search_available_rooms, quote_price]
+  key_facts:
+    - any: ["เท่ากันทุกวัน", "ราคาเท่ากัน", "ไม่แพงขึ้น", "ไม่มีการบวก"]
+  reference_answer: "ไม่แพงขึ้นค่ะ ราคาต่อคืนเท่ากันทุกวัน ไม่มีการบวกราคาช่วงวันหยุด"
+  source_ref: ["th/rates.md#ราคาห้องพัก", "th/faq.md#ถาม: วันหยุดหรือวันเสาร์อาทิตย์ราคาแพงขึ้นไหม"]
+  consistency_subset: true
+
+- id: kb-th-04
+  language: th
+  category: room_types
+  question: "ห้องพักมีกี่แบบคะ"
+  answerable: true
+  expected_sources: [th/room_types.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [search_available_rooms]
+  key_facts:
+    - any: ["เตียงคู่", "twin"]
+    - any: ["เตียงเดี่ยว", "single"]
+  reference_answer: "มี 2 แบบคือห้องเตียงคู่ (twin) และห้องเตียงเดี่ยว (single) ขนาดเท่ากัน 16 ตารางเมตร"
+  source_ref: ["th/room_types.md#ประเภทห้องพัก", "th/faq.md#ถาม: ห้องพักมีกี่แบบ ต่างกันยังไง"]
+
+- id: kb-th-05
+  language: th
+  category: children
+  question: "ลูกอายุ 5 ขวบ ต้องจ่ายเพิ่มไหม"
+  answerable: true
+  expected_sources: [th/room_types.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีค่าใช้จ่ายเพิ่ม", "ไม่เสียเพิ่ม", "ไม่คิดเพิ่ม", "ไม่ต้องจ่ายเพิ่ม", "ไม่เสียค่าใช้จ่ายเพิ่ม"]
+  reference_answer: "ไม่ต้องจ่ายเพิ่มค่ะ คิดค่าที่พักเป็นรายห้อง ถ้าจำนวนคนรวมไม่เกินที่ห้องรองรับ ถ้าต้องการเตียงเพิ่มคิดค่าเตียงเสริมคืนละ 200 บาท"
+  source_ref: ["th/room_types.md#เตียงเสริมและการเข้าพักของเด็ก", "th/faq.md#ถาม: เด็กพักฟรีไหม"]
+
+- id: kb-th-06
+  language: th
+  category: booking_channel
+  question: "จองห้องได้ทางไหนบ้าง"
+  answerable: true
+  expected_sources: [th/overview.md, th/faq.md, th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["แอป", "app"]
+  reference_answer: "จองผ่านแอปของรีสอร์ทซึ่งเป็นช่องทางหลัก สอบถามหรือขอเตียงเสริมโทร 081-598-1199 หรือ Facebook: Poonsuk Resort Sadao"
+  source_ref: ["th/overview.md#การจองห้องพัก", "th/faq.md#ถาม: จองห้องพักยังไง"]
+
+- id: kb-th-07
+  language: th
+  category: payment
+  question: "จ่ายมัดจำก่อนได้ไหม หรือต้องจ่ายเต็ม"
+  answerable: true
+  expected_sources: [th/rates.md, th/faq.md, th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["เต็มจำนวน"]
+    - any: ["พร้อมเพย์", "QR"]
+  reference_answer: "ไม่มีการแบ่งจ่ายค่ะ ชำระค่าห้องเต็มจำนวนในแอปครั้งเดียวด้วย QR พร้อมเพย์ แล้วอัปโหลดสลิปในแอป"
+  source_ref: ["th/rates.md#การชำระเงิน", "th/faq.md#ถาม: จ่ายเงินยังไง ต้องจ่ายล่วงหน้าบางส่วนไหม"]
+  consistency_subset: true
+
+- id: kb-th-08
+  language: th
+  category: payment
+  question: "ถ้าโอนเงินแล้วแต่ไม่ได้อัปสลิปจะเป็นยังไง"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/rates.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["ยกเลิกการจองอัตโนมัติ", "ยกเลิกการจองนั้นอัตโนมัติ", "ยกเลิกอัตโนมัติ", "ถูกยกเลิก"]
+  reference_answer: "ถ้าไม่อัปโหลดสลิปภายในเวลาที่แอปกำหนด ระบบจะยกเลิกการจองอัตโนมัติ และจองใหม่ได้"
+  source_ref: ["th/booking_policy.md#การจองและการชำระเงิน", "th/rates.md#การชำระเงิน"]
+
+- id: kb-th-09
+  language: th
+  category: facilities
+  question: "ห้องน้ำในตัวไหมคะ หรือต้องใช้ห้องน้ำรวม"
+  answerable: true
+  expected_sources: [th/faq.md, th/room_types.md, th/facilities.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ห้องน้ำส่วนตัว", "ห้องน้ำในตัว"]
+  reference_answer: "ห้องน้ำในตัวค่ะ ห้องพักแต่ละห้องเป็นบ้านแยกหลังมีห้องน้ำส่วนตัว"
+  source_ref: ["th/faq.md#ถาม: ห้องน้ำเป็นแบบส่วนตัวในห้องไหม", "th/room_types.md#รายชื่อห้องพักทั้งหมด"]
+
+- id: kb-th-10
+  language: th
+  category: location
+  question: "ขอที่อยู่รีสอร์ทหน่อยค่ะ"
+  answerable: true
+  expected_sources: [th/location_and_travel.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["53/33", "สะเดา"]
+  forbidden: ['https?://', '\b9\d{4}\b']
+  reference_answer: "53/33 หมู่ 11 ถนนเลียบคลองท่าพรุ ตำบลสะเดา อำเภอสะเดา จังหวัดสงขลา"
+  source_ref: ["th/location_and_travel.md#ที่อยู่", "th/faq.md#ถาม: รีสอร์ทอยู่ตรงไหน"]
+
+- id: kb-th-11
+  language: th
+  category: location
+  question: "จากรีสอร์ทไปโลตัสกี่นาที"
+  answerable: true
+  expected_sources: [th/location_and_travel.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["5 นาที"]
+  reference_answer: "ประมาณ 5 นาทีโดยรถยนต์ค่ะ"
+  source_ref: ["th/location_and_travel.md#สถานที่ใกล้เคียง", "th/faq.md#ถาม: จากรีสอร์ทไปโลตัสหรือตลาดไกลไหม"]
+
+- id: kb-th-12
+  language: th
+  category: contact
+  question: "มีไลน์ไหมคะ ขอไอดีไลน์หน่อย"
+  answerable: true
+  expected_sources: [th/overview.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มี LINE", "ไม่มีไลน์", "ไม่มีค่ะ", "ไม่มี line official"]
+  forbidden: ['@[A-Za-z0-9_.]{3,}', 'line\.me']
+  reference_answer: "ไม่มีค่ะ รีสอร์ทไม่มี LINE Official ติดต่อได้ทางโทร 081-598-1199 หรือ Facebook: Poonsuk Resort Sadao"
+  source_ref: ["th/overview.md#ช่องทางที่ไม่รองรับ", "th/faq.md#ถาม: มี LINE (ไลน์) ไหม"]
+
+- id: kb-th-13
+  language: th
+  category: facilities
+  question: "มีสปาหรือบริการนวดไหม"
+  answerable: true
+  expected_sources: [th/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีสปา", "ไม่มีบริการนวด", "ไม่มีนวด"]
+  forbidden: ['\d[\d,]*\s*บาท']
+  reference_answer: "ไม่มีค่ะ รีสอร์ทไม่มีสปาและไม่มีบริการนวด"
+  source_ref: ["th/facilities.md#สิ่งที่รีสอร์ทไม่มีให้บริการ"]
+
+- id: kb-th-14
+  language: th
+  category: facilities
+  question: "สั่งอาหารมาส่งที่ห้องได้ไหม มีรูมเซอร์วิสป่าว"
+  answerable: true
+  expected_sources: [th/facilities.md, th/rates.md, th/room_types.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีบริการรูมเซอร์วิส", "ไม่มีรูมเซอร์วิส"]
+  reference_answer: "ไม่มีบริการรูมเซอร์วิสค่ะ"
+  source_ref: ["th/facilities.md#เครื่องดื่มและอาหาร", "th/facilities.md#สิ่งที่รีสอร์ทไม่มีให้บริการ"]
+
+- id: kb-th-15
+  language: th
+  category: extra_bed
+  question: "ค่าเตียงเสริมจ่ายในแอปหรือจ่ายที่รีสอร์ท"
+  answerable: true
+  expected_sources: [th/rates.md, th/booking_policy.md, th/room_types.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ที่รีสอร์ท"]
+    - any: ["วันเช็คอิน"]
+  reference_answer: "ค่าเตียงเสริมชำระที่รีสอร์ทในวันเช็คอิน ไม่ได้ชำระในแอป"
+  source_ref: ["th/rates.md#ค่าใช้จ่ายเพิ่มเติม", "th/booking_policy.md#การจองและการชำระเงิน"]
+  consistency_subset: true
+
+- id: kb-th-16
+  language: th
+  category: extra_bed
+  question: "ขอเตียงเสริมได้ห้องละกี่เตียง"
+  answerable: true
+  expected_sources: [th/room_types.md, th/rates.md, th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่เกิน 1 เตียง", "1 เตียง", "หนึ่งเตียง"]
+  reference_answer: "ขอได้ห้องละไม่เกิน 1 เตียง คืนละ 200 บาทต่อเตียง"
+  source_ref: ["th/room_types.md#เตียงเสริมและการเข้าพักของเด็ก", "th/rates.md#ค่าใช้จ่ายเพิ่มเติม"]
+
+- id: kb-th-17
+  language: th
+  category: contact
+  question: "มีเพจเฟซบุ๊กไหมคะ"
+  answerable: true
+  expected_sources: [th/overview.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["Poonsuk Resort Sadao"]
+  forbidden: ['facebook\.com/', 'fb\.com/']
+  reference_answer: "มีค่ะ Facebook: Poonsuk Resort Sadao"
+  source_ref: ["th/overview.md#ช่องทางติดต่อ"]
+
+- id: kb-th-18
+  language: th
+  category: location
+  question: "สนามบินที่ใกล้ที่สุดคือที่ไหน"
+  answerable: true
+  expected_sources: [th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["หาดใหญ่"]
+  forbidden: ['\d+\s*(?:กม|กิโล|km)']
+  reference_answer: "สนามบินที่ใกล้ที่สุดคือสนามบินนานาชาติหาดใหญ่ (ระยะทางยังไม่มีข้อมูลในระบบ)"
+  source_ref: ["th/location_and_travel.md#การเดินทางจากสนามบิน"]
+
+- id: kb-th-19
+  language: th
+  category: cancellation
+  question: "ยกเลิกการจองแล้วได้เงินคืนไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["คืนเงิน"]
+    - any: ["อัตโนมัติ"]
+  # ระยะเวลาคืนเงินยังเป็น <<รอเติม>> ห้ามมีจำนวนวัน
+  forbidden: ['\d+\s*(?:วันทำการ|วัน)']
+  reference_answer: "ยกเลิกเองได้ในแอปก่อนวันเช็คอิน ถ้าชำระแล้วระบบบันทึกการคืนเงินให้อัตโนมัติและเจ้าหน้าที่จะโอนคืน (ยังไม่มีข้อมูลว่าคืนเต็มจำนวนหรือใช้เวลากี่วัน)"
+  source_ref: ["th/booking_policy.md#นโยบายการยกเลิกการจอง", "th/faq.md#ถาม: ยกเลิกการจองแล้วได้เงินคืนไหม"]
+
+- id: kb-en-01
+  language: en
+  category: checkin
+  question: "If I arrive at 11pm can I still check in?"
+  answerable: true
+  expected_sources: [en/booking_policy.md, en/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["22:00", "081-598-1199"]
+  reference_answer: "The latest check-in is 10:00 PM. If you will arrive after 10:00 PM, please call ahead on 081-598-1199."
+  source_ref: ["en/booking_policy.md#Check-in and Check-out Times", "en/faq.md#Q: What time can I check in?"]
+  consistency_subset: true
+
+- id: kb-en-02
+  language: en
+  category: luggage
+  question: "Can I leave my luggage before check-in?"
+  answerable: true
+  expected_sources: [en/booking_policy.md, en/faq.md, en/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["does not offer luggage storage", "no luggage storage", "not offer luggage storage", "cannot leave"]
+  reference_answer: "No. The resort does not offer luggage storage and does not accept check-in before 2:00 PM."
+  source_ref: ["en/booking_policy.md#Check-in and Check-out Times", "en/faq.md#Q: Can I leave my bags if I arrive before check-in time?"]
+
+- id: kb-en-03
+  language: en
+  category: children
+  question: "Do kids stay free?"
+  answerable: true
+  expected_sources: [en/room_types.md, en/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["no extra cost", "no additional cost", "at no extra", "no extra charge", "free of charge"]
+  reference_answer: "Children stay at no extra cost as long as the total number of guests fits the room; an extra bed is 200 THB per night."
+  source_ref: ["en/room_types.md#Extra Beds and Children", "en/faq.md#Q: Do children stay free?"]
+
+- id: kb-en-04
+  language: en
+  category: payment
+  question: "How do I pay for the room?"
+  answerable: true
+  expected_sources: [en/rates.md, en/faq.md, en/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["PromptPay"]
+    - any: ["full"]
+  reference_answer: "Pay the full room charge in the app in one payment by scanning the PromptPay QR code, then upload the slip in the app."
+  source_ref: ["en/rates.md#Payment", "en/faq.md#Q: How do I pay? Do I pay part up front?"]
+
+- id: kb-en-05
+  language: en
+  category: contact
+  question: "Do you have a LINE account?"
+  answerable: true
+  expected_sources: [en/overview.md, en/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["no LINE", "No, we don't", "do not have a LINE", "don't have a LINE", "don't have LINE"]
+  forbidden: ['@[A-Za-z0-9_.]{3,}', 'line\.me']
+  reference_answer: "No, the resort has no LINE Official account. Contact us by phone 081-598-1199 or Facebook: Poonsuk Resort Sadao."
+  source_ref: ["en/overview.md#Unsupported Channels", "en/faq.md#Q: Do you have LINE?"]
+
+- id: kb-en-06
+  language: en
+  category: extra_bed
+  question: "Where do I pay for the extra bed?"
+  answerable: true
+  expected_sources: [en/rates.md, en/booking_policy.md, en/room_types.md, en/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["at the resort"]
+    - any: ["check-in"]
+  reference_answer: "The extra bed fee is paid at the resort on the day of check-in, not in the app."
+  source_ref: ["en/rates.md#Extra Charges", "en/booking_policy.md#Booking and Payment"]

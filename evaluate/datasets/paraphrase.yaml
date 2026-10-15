@@ -1,0 +1,588 @@
+# กลุ่ม paraphrase: คำถามความหมายเดียวกัน หลายแบบ (ภาษาพูด, พิมพ์ผิด, ทับศัพท์, อังกฤษ)
+# ใช้วัด Paraphrase Consistency = ทุกข้อในกลุ่มผ่าน/ตก key fact เหมือนกัน
+# ทุกข้อนับเป็นคำถามปกติในหมวดของตัวเองด้วย
+
+# --- กลุ่ม 1: เวลาเช็คอิน ---
+- id: pp-checkin-1
+  language: th
+  category: checkin
+  paraphrase_group: checkin_time
+  question: "เช็คอินกี่โมง"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["14:00"]
+  reference_answer: "เช็คอินได้ตั้งแต่ 14.00 น. ถึง 22.00 น."
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: เช็คอินได้ตั้งแต่กี่โมง"]
+  consistency_subset: true
+
+- id: pp-checkin-2
+  language: th
+  category: checkin
+  paraphrase_group: checkin_time
+  question: "เชคอินได้กี่โมงคะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["14:00"]
+  reference_answer: "เช็คอินได้ตั้งแต่ 14.00 น. ถึง 22.00 น."
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: เช็คอินได้ตั้งแต่กี่โมง"]
+
+- id: pp-checkin-3
+  language: th
+  category: checkin
+  paraphrase_group: checkin_time
+  question: "check in ได้ตั้งแต่กี่โมงอะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["14:00"]
+  reference_answer: "เช็คอินได้ตั้งแต่ 14.00 น. ถึง 22.00 น."
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: เช็คอินได้ตั้งแต่กี่โมง"]
+
+- id: pp-checkin-4
+  language: en
+  category: checkin
+  paraphrase_group: checkin_time
+  question: "What time is check-in?"
+  answerable: true
+  expected_sources: [en/booking_policy.md, en/faq.md, en/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["14:00"]
+  reference_answer: "Check-in is from 2:00 PM until 10:00 PM."
+  source_ref: ["en/booking_policy.md#Check-in and Check-out Times", "en/faq.md#Q: What time can I check in?"]
+
+# --- กลุ่ม 2: เวลาเช็คเอาท์ ---
+- id: pp-checkout-1
+  language: th
+  category: checkout
+  paraphrase_group: checkout_time
+  question: "เช็คเอาท์กี่โมง"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["12:00"]
+  reference_answer: "เช็คเอาท์ก่อน 12.00 น. ของวันสุดท้าย"
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: เช็คเอาท์กี่โมง"]
+
+- id: pp-checkout-2
+  language: th
+  category: checkout
+  paraphrase_group: checkout_time
+  question: "วันกลับต้องออกจากห้องกี่โมงคะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["12:00"]
+  reference_answer: "เช็คเอาท์ก่อน 12.00 น. ของวันสุดท้าย"
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: เช็คเอาท์กี่โมง"]
+
+- id: pp-checkout-3
+  language: th
+  category: checkout
+  paraphrase_group: checkout_time
+  question: "เชคเอ้าท์ก่อนกี่โมง"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["12:00"]
+  reference_answer: "เช็คเอาท์ก่อน 12.00 น. ของวันสุดท้าย"
+  source_ref: ["th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์", "th/faq.md#ถาม: เช็คเอาท์กี่โมง"]
+
+- id: pp-checkout-4
+  language: en
+  category: checkout
+  paraphrase_group: checkout_time
+  question: "What time do I need to check out?"
+  answerable: true
+  expected_sources: [en/booking_policy.md, en/faq.md, en/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["12:00"]
+  reference_answer: "Check-out is before 12:00 noon on your last day."
+  source_ref: ["en/booking_policy.md#Check-in and Check-out Times", "en/faq.md#Q: What time is check-out?"]
+
+# --- กลุ่ม 3: ค่าเตียงเสริม ---
+- id: pp-extrabed-1
+  language: th
+  category: extra_bed
+  paraphrase_group: extra_bed_price
+  question: "เตียงเสริมคืนละเท่าไหร่"
+  answerable: true
+  expected_sources: [th/rates.md, th/booking_policy.md, th/room_types.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["200"]
+  reference_answer: "เตียงเสริมคืนละ 200 บาทต่อเตียง ห้องละไม่เกิน 1 เตียง ชำระที่รีสอร์ทวันเช็คอิน"
+  source_ref: ["th/rates.md#ค่าใช้จ่ายเพิ่มเติม", "th/faq.md#ถาม: ขอเตียงเสริมได้ไหม ราคาเท่าไหร่"]
+  consistency_subset: true
+
+- id: pp-extrabed-2
+  language: th
+  category: extra_bed
+  paraphrase_group: extra_bed_price
+  question: "ขอเตียงเพิ่มคิดเงินไหมคะ"
+  answerable: true
+  expected_sources: [th/rates.md, th/booking_policy.md, th/room_types.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["200"]
+  reference_answer: "คิดค่ะ เตียงเสริมคืนละ 200 บาทต่อเตียง ห้องละไม่เกิน 1 เตียง"
+  source_ref: ["th/rates.md#ค่าใช้จ่ายเพิ่มเติม", "th/faq.md#ถาม: ขอเตียงเสริมได้ไหม ราคาเท่าไหร่"]
+
+- id: pp-extrabed-3
+  language: th
+  category: extra_bed
+  paraphrase_group: extra_bed_price
+  question: "เตียงเสิมกี่บาท"
+  answerable: true
+  expected_sources: [th/rates.md, th/booking_policy.md, th/room_types.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["200"]
+  reference_answer: "เตียงเสริมคืนละ 200 บาทต่อเตียง"
+  source_ref: ["th/rates.md#ค่าใช้จ่ายเพิ่มเติม", "th/faq.md#ถาม: ขอเตียงเสริมได้ไหม ราคาเท่าไหร่"]
+
+- id: pp-extrabed-4
+  language: en
+  category: extra_bed
+  paraphrase_group: extra_bed_price
+  question: "How much is an extra bed?"
+  answerable: true
+  expected_sources: [en/rates.md, en/booking_policy.md, en/room_types.md, en/faq.md, en/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["200"]
+  reference_answer: "An extra bed is 200 THB per bed per night, at most one per room."
+  source_ref: ["en/rates.md#Extra Charges", "en/faq.md#Q: Can I request an extra bed? How much is it?"]
+
+# --- กลุ่ม 4: สัตว์เลี้ยง ---
+- id: pp-pets-1
+  language: th
+  category: pets
+  paraphrase_group: pets
+  question: "พาหมามาได้ไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่รับสัตว์เลี้ยง", "ไม่อนุญาตให้นำสัตว์เลี้ยง", "ไม่อนุญาต", "ไม่สามารถนำ", "ไม่ได้"]
+  reference_answer: "ไม่ได้ค่ะ รีสอร์ทไม่รับสัตว์เลี้ยงทุกชนิดและทุกขนาด รวมถึงสุนัขและแมว"
+  source_ref: ["th/booking_policy.md#นโยบายสัตว์เลี้ยง", "th/faq.md#ถาม: พาหมามาด้วยได้ไหม"]
+  consistency_subset: true
+
+- id: pp-pets-2
+  language: th
+  category: pets
+  paraphrase_group: pets
+  question: "เอาน้องแมวมาด้วยได้ป่าว"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่รับสัตว์เลี้ยง", "ไม่อนุญาตให้นำสัตว์เลี้ยง", "ไม่อนุญาต", "ไม่สามารถนำ", "ไม่ได้"]
+  reference_answer: "ไม่ได้ค่ะ รีสอร์ทไม่รับสัตว์เลี้ยงทุกชนิดและทุกขนาด รวมถึงสุนัขและแมว"
+  source_ref: ["th/booking_policy.md#นโยบายสัตว์เลี้ยง", "th/faq.md#ถาม: พาหมามาด้วยได้ไหม"]
+
+- id: pp-pets-3
+  language: th
+  category: pets
+  paraphrase_group: pets
+  question: "สัตว์เลี้ยงเข้าพักได้มั้ยคะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่รับสัตว์เลี้ยง", "ไม่อนุญาตให้นำสัตว์เลี้ยง", "ไม่อนุญาต", "ไม่สามารถนำ", "ไม่ได้"]
+  reference_answer: "ไม่ได้ค่ะ รีสอร์ทไม่อนุญาตให้นำสัตว์เลี้ยงเข้าพักในทุกกรณี"
+  source_ref: ["th/booking_policy.md#นโยบายสัตว์เลี้ยง", "th/faq.md#ถาม: นำสัตว์เลี้ยงมาด้วยได้ไหม"]
+
+- id: pp-pets-4
+  language: en
+  category: pets
+  paraphrase_group: pets
+  question: "Can I bring my dog?"
+  answerable: true
+  expected_sources: [en/booking_policy.md, en/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["does not accept pets", "not accept pets", "not permitted", "not allowed", "no pets"]
+  reference_answer: "No. The resort does not accept pets of any kind or size, including dogs and cats."
+  source_ref: ["en/booking_policy.md#Pet Policy", "en/faq.md#Q: Can I bring my dog?"]
+
+# --- กลุ่ม 5: อาหารเช้า ---
+- id: pp-breakfast-1
+  language: th
+  category: food
+  paraphrase_group: breakfast
+  question: "มีอาหารเช้าไหม"
+  answerable: true
+  expected_sources: [th/facilities.md, th/faq.md, th/rates.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีบริการอาหารเช้า", "ไม่มีอาหารเช้า", "ไม่รวมอาหารเช้า"]
+  reference_answer: "ไม่มีค่ะ รีสอร์ทไม่มีบริการอาหารเช้าและไม่มีห้องอาหาร"
+  source_ref: ["th/facilities.md#เครื่องดื่มและอาหาร", "th/faq.md#ถาม: มีอาหารเช้าไหม"]
+
+- id: pp-breakfast-2
+  language: th
+  category: food
+  paraphrase_group: breakfast
+  question: "ราคาห้องรวมอาหารเช้ามั้ยคะ"
+  answerable: true
+  expected_sources: [th/rates.md, th/facilities.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [search_available_rooms]
+  key_facts:
+    - any: ["ไม่มีบริการอาหารเช้า", "ไม่มีอาหารเช้า", "ไม่รวมอาหารเช้า"]
+  reference_answer: "ไม่รวมค่ะ ราคาห้องเป็นค่าห้องอย่างเดียว รีสอร์ทไม่มีบริการอาหารเช้า"
+  source_ref: ["th/rates.md#สิ่งที่ไม่รวมในราคาห้องพัก", "th/faq.md#ถาม: มีอาหารเช้าไหม"]
+
+- id: pp-breakfast-3
+  language: th
+  category: food
+  paraphrase_group: breakfast
+  question: "breakfast รวมไหม"
+  answerable: true
+  expected_sources: [th/rates.md, th/facilities.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีบริการอาหารเช้า", "ไม่มีอาหารเช้า", "ไม่รวมอาหารเช้า"]
+  reference_answer: "ไม่รวมค่ะ รีสอร์ทไม่มีบริการอาหารเช้า"
+  source_ref: ["th/rates.md#สิ่งที่ไม่รวมในราคาห้องพัก", "th/faq.md#ถาม: มีอาหารเช้าไหม"]
+
+- id: pp-breakfast-4
+  language: en
+  category: food
+  paraphrase_group: breakfast
+  question: "Is breakfast included?"
+  answerable: true
+  expected_sources: [en/rates.md, en/facilities.md, en/faq.md, en/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["does not serve breakfast", "not include breakfast", "no breakfast", "breakfast is not provided", "not included"]
+  reference_answer: "No. The resort does not serve breakfast; the rate covers the room only."
+  source_ref: ["en/rates.md#Not Included in the Rate", "en/faq.md#Q: Is breakfast included?"]
+
+# --- กลุ่ม 6: ที่จอดรถ ---
+- id: pp-parking-1
+  language: th
+  category: parking
+  paraphrase_group: parking
+  question: "ที่จอดรถฟรีไหม"
+  answerable: true
+  expected_sources: [th/facilities.md, th/faq.md, th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ฟรี", "ไม่เสียเงิน"]
+  reference_answer: "ฟรีค่ะ จอดได้ 4 คัน มีกล้องวงจรปิด"
+  source_ref: ["th/facilities.md#ที่จอดรถ", "th/faq.md#ถาม: ที่จอดรถเสียเงินไหม จอดได้กี่คัน"]
+
+- id: pp-parking-2
+  language: th
+  category: parking
+  paraphrase_group: parking
+  question: "จอดรถเสียตังมั้ย"
+  answerable: true
+  expected_sources: [th/facilities.md, th/faq.md, th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ฟรี", "ไม่เสียเงิน"]
+  reference_answer: "ไม่เสียเงินค่ะ ที่จอดรถฟรีสำหรับผู้เข้าพัก"
+  source_ref: ["th/facilities.md#ที่จอดรถ", "th/faq.md#ถาม: ที่จอดรถเสียเงินไหม จอดได้กี่คัน"]
+
+- id: pp-parking-3
+  language: th
+  category: parking
+  paraphrase_group: parking
+  question: "มีที่จอดรถป่ะ ขับรถไปเอง"
+  answerable: true
+  expected_sources: [th/facilities.md, th/faq.md, th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ฟรี", "ไม่เสียเงิน"]
+  reference_answer: "มีค่ะ ที่จอดรถฟรี จอดได้ 4 คัน ใกล้ห้องพัก"
+  source_ref: ["th/facilities.md#ที่จอดรถ", "th/location_and_travel.md#การเดินทางด้วยรถส่วนตัว"]
+
+- id: pp-parking-4
+  language: en
+  category: parking
+  paraphrase_group: parking
+  question: "Is parking free?"
+  answerable: true
+  expected_sources: [en/facilities.md, en/faq.md, en/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["free"]
+  reference_answer: "Yes, parking is free for guests, with space for 4 cars and CCTV."
+  source_ref: ["en/facilities.md#Parking", "en/faq.md#Q: Is parking free? How many cars can park?"]
+
+# --- กลุ่ม 7: วิธีชำระเงิน (โอนเท่านั้น) ---
+- id: pp-pay-1
+  language: th
+  category: payment
+  paraphrase_group: payment_method
+  question: "จ่ายเงินสดได้ไหม"
+  answerable: true
+  expected_sources: [th/rates.md, th/faq.md, th/booking_policy.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["โอน"]
+  reference_answer: "ไม่ได้ค่ะ รับชำระด้วยการโอนเท่านั้น ไม่รับเงินสดและไม่รับบัตรเครดิต"
+  source_ref: ["th/rates.md#การชำระเงิน", "th/faq.md#ถาม: จ่ายเงินสดหรือบัตรเครดิตได้ไหม"]
+
+- id: pp-pay-2
+  language: th
+  category: payment
+  paraphrase_group: payment_method
+  question: "ไปจ่ายหน้างานเป็นเงินสดได้มั้ย"
+  answerable: true
+  expected_sources: [th/rates.md, th/faq.md, th/booking_policy.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["โอน"]
+  reference_answer: "ไม่ได้ค่ะ ชำระค่าห้องเต็มจำนวนในแอปด้วยการโอนเท่านั้น ไม่รับเงินสด"
+  source_ref: ["th/rates.md#การชำระเงิน", "th/faq.md#ถาม: จ่ายเงินสดหรือบัตรเครดิตได้ไหม"]
+
+- id: pp-pay-3
+  language: th
+  category: payment
+  paraphrase_group: payment_method
+  question: "รูดบัตรเครดิตได้ไหมคะ"
+  answerable: true
+  expected_sources: [th/rates.md, th/faq.md, th/booking_policy.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["โอน"]
+  reference_answer: "ไม่ได้ค่ะ รับชำระด้วยการโอนเท่านั้น ไม่รับบัตรเครดิต"
+  source_ref: ["th/rates.md#การชำระเงิน", "th/faq.md#ถาม: จ่ายเงินสดหรือบัตรเครดิตได้ไหม"]
+
+- id: pp-pay-4
+  language: en
+  category: payment
+  paraphrase_group: payment_method
+  question: "Can I pay by credit card?"
+  answerable: true
+  expected_sources: [en/rates.md, en/faq.md, en/booking_policy.md, en/overview.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_payment_info]
+  key_facts:
+    - any: ["transfer"]
+  reference_answer: "No. The resort accepts bank transfer only — no cash and no credit cards."
+  source_ref: ["en/rates.md#Payment", "en/faq.md#Q: Can I pay in cash or by credit card?"]
+
+# --- กลุ่ม 8: สระว่ายน้ำ ---
+- id: pp-pool-1
+  language: th
+  category: facilities
+  paraphrase_group: pool
+  question: "มีสระว่ายน้ำไหม"
+  answerable: true
+  expected_sources: [th/facilities.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีสระ"]
+  reference_answer: "ไม่มีสระว่ายน้ำค่ะ รีสอร์ทเป็นที่พักขนาดเล็ก เน้นความเงียบสงบ"
+  source_ref: ["th/facilities.md#สิ่งที่รีสอร์ทไม่มีให้บริการ", "th/faq.md#ถาม: มีสระว่ายน้ำไหม"]
+
+- id: pp-pool-2
+  language: th
+  category: facilities
+  paraphrase_group: pool
+  question: "มีสระมั้ยคะ"
+  answerable: true
+  expected_sources: [th/facilities.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีสระ"]
+  reference_answer: "ไม่มีสระว่ายน้ำค่ะ"
+  source_ref: ["th/facilities.md#สิ่งที่รีสอร์ทไม่มีให้บริการ", "th/faq.md#ถาม: มีสระว่ายน้ำไหม"]
+  consistency_subset: true
+
+- id: pp-pool-3
+  language: th
+  category: facilities
+  paraphrase_group: pool
+  question: "ลูกอยากว่ายน้ำ ที่รีสอร์ทมีสระป่าว"
+  answerable: true
+  expected_sources: [th/facilities.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีสระ"]
+  reference_answer: "ไม่มีสระว่ายน้ำค่ะ"
+  source_ref: ["th/facilities.md#สิ่งที่รีสอร์ทไม่มีให้บริการ", "th/faq.md#ถาม: มีสระว่ายน้ำไหม"]
+
+- id: pp-pool-4
+  language: en
+  category: facilities
+  paraphrase_group: pool
+  question: "Do you have a pool?"
+  answerable: true
+  expected_sources: [en/facilities.md, en/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["no swimming pool", "no pool", "not have a pool", "don't have a pool", "doesn't have a pool", "not have a swimming pool"]
+  reference_answer: "No, there is no swimming pool."
+  source_ref: ["en/facilities.md#Not Available at the Resort", "en/faq.md#Q: Is there a swimming pool?"]
+
+# --- กลุ่ม 9: การยกเลิก ---
+- id: pp-cancel-1
+  language: th
+  category: cancellation
+  paraphrase_group: cancellation
+  question: "ยกเลิกการจองได้ไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["แอป"]
+    - any: ["ก่อนวันเช็คอิน"]
+  reference_answer: "ยกเลิกเองได้ในแอปก่อนวันเช็คอินเท่านั้น ตั้งแต่วันเช็คอินให้ติดต่อ 081-598-1199"
+  source_ref: ["th/booking_policy.md#นโยบายการยกเลิกการจอง", "th/overview.md#นโยบายโดยสรุป"]
+
+- id: pp-cancel-2
+  language: th
+  category: cancellation
+  paraphrase_group: cancellation
+  question: "แคนเซิลได้มั้ยคะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["แอป"]
+    - any: ["ก่อนวันเช็คอิน"]
+  reference_answer: "ยกเลิกเองได้ในแอปก่อนวันเช็คอินเท่านั้น"
+  source_ref: ["th/booking_policy.md#นโยบายการยกเลิกการจอง", "th/overview.md#นโยบายโดยสรุป"]
+
+- id: pp-cancel-3
+  language: th
+  category: cancellation
+  paraphrase_group: cancellation
+  question: "ถ้าไม่ไปแล้วจะยกเลิกยังไง"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["แอป"]
+    - any: ["ก่อนวันเช็คอิน"]
+  reference_answer: "ยกเลิกเองได้ในแอปก่อนวันเช็คอินเท่านั้น"
+  source_ref: ["th/booking_policy.md#นโยบายการยกเลิกการจอง", "th/overview.md#นโยบายโดยสรุป"]
+
+- id: pp-cancel-4
+  language: en
+  category: cancellation
+  paraphrase_group: cancellation
+  question: "How do I cancel my booking?"
+  answerable: true
+  expected_sources: [en/booking_policy.md, en/faq.md, en/overview.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_my_bookings]
+  key_facts:
+    - any: ["app"]
+    - any: ["before the check-in"]
+  reference_answer: "You can cancel yourself in the app, but only before the check-in date."
+  source_ref: ["en/booking_policy.md#Cancellation Policy", "en/overview.md#Policy Summary"]
+
+# --- กลุ่ม 10: ขนาดห้อง ---
+- id: pp-size-1
+  language: th
+  category: room_types
+  paraphrase_group: room_size
+  question: "ห้องกว้างเท่าไหร่"
+  answerable: true
+  expected_sources: [th/room_types.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["16"]
+  reference_answer: "ทุกห้องขนาด 16 ตารางเมตร (4 x 4 เมตร)"
+  source_ref: ["th/room_types.md#ประเภทห้องพัก", "th/faq.md#ถาม: ห้องกว้างเท่าไหร่"]
+
+- id: pp-size-2
+  language: th
+  category: room_types
+  paraphrase_group: room_size
+  question: "ห้องกี่ตารางเมตรคะ"
+  answerable: true
+  expected_sources: [th/room_types.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["16"]
+  reference_answer: "ทุกห้องขนาด 16 ตารางเมตร"
+  source_ref: ["th/room_types.md#ประเภทห้องพัก", "th/faq.md#ถาม: ห้องกว้างเท่าไหร่"]
+
+- id: pp-size-3
+  language: th
+  category: room_types
+  paraphrase_group: room_size
+  question: "ห้องใหญ่แค่ไหน"
+  answerable: true
+  expected_sources: [th/room_types.md, th/faq.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["16"]
+  reference_answer: "ทุกห้องขนาด 16 ตารางเมตร (4 x 4 เมตร)"
+  source_ref: ["th/room_types.md#ประเภทห้องพัก", "th/faq.md#ถาม: ห้องกว้างเท่าไหร่"]
+
+- id: pp-size-4
+  language: en
+  category: room_types
+  paraphrase_group: room_size
+  question: "How big are the rooms?"
+  answerable: true
+  expected_sources: [en/room_types.md, en/faq.md, en/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["16"]
+  reference_answer: "Every room is 16 square metres (4 x 4 metres)."
+  source_ref: ["en/room_types.md#Room Types", "en/faq.md#Q: How big are the rooms?"]
+
+# --- กลุ่ม 11: ห้องว่างพรุ่งนี้ (ข้อมูลสด) ---
+- id: pp-avail-1
+  language: th
+  category: availability
+  paraphrase_group: availability_tomorrow
+  question: "พรุ่งนี้มีห้องว่างไหม"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: pp-avail-2
+  language: th
+  category: availability
+  paraphrase_group: availability_tomorrow
+  question: "พรุ่งนี้ว่างมั้ยคะ"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: pp-avail-3
+  language: th
+  category: availability
+  paraphrase_group: availability_tomorrow
+  question: "tomorrow มีห้องป่ะ"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: pp-avail-4
+  language: en
+  category: availability
+  paraphrase_group: availability_tomorrow
+  question: "Any rooms available tomorrow?"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]

@@ -5,3 +5,4 @@ __pycache__/
 .git/
 data/chroma/
 .env
+data/chat_history.db*

@@ -1,0 +1,90 @@
+# คำถามที่ต้องใช้ทั้งระบบจอง (ข้อมูลสด) และคลังความรู้
+# key_facts = ส่วนที่มาจากคลังความรู้ (validator ตรวจกับไฟล์ใน source_ref), live.checks = ส่วนที่มาจาก Booking API
+
+- id: ms-01
+  language: th
+  category: guests_plan
+  question: "มา 3 คน เสาร์อาทิตย์หน้า ห้องเดียวขอเตียงเสริม รวมทั้งหมดต้องจ่ายเท่าไหร่"
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_knowledge_base, search_available_rooms]
+  expected_args: {check_in: next_weekend, check_out: next_weekend+2, guests: 3}
+  key_facts:
+    - any: ["ที่รีสอร์ท"]
+  live:
+    dates: {check_in: next_weekend, check_out: next_weekend+2}
+    checks: [{grand_total: {guests: 3}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut", "th/rates.md#ค่าใช้จ่ายเพิ่มเติม", "th/booking_policy.md#การจองและการชำระเงิน"]
+  consistency_subset: true
+
+- id: ms-02
+  language: th
+  category: availability
+  question: "พรุ่งนี้มีห้องว่างไหม แล้วเช็คอินได้กี่โมง"
+  answerable: true
+  expected_tools: [search_available_rooms, search_knowledge_base]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  key_facts: ["14:00"]
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut", "th/booking_policy.md#เวลาเช็คอินและเช็คเอาท์"]
+  consistency_subset: true
+
+- id: ms-03
+  language: th
+  category: payment
+  question: "คืนนี้ยังมีห้องว่างไหม ไปถึงแล้วจ่ายเงินสดได้หรือเปล่า"
+  answerable: true
+  expected_tools: [search_available_rooms, search_knowledge_base]
+  allowed_extra_tools: [get_payment_info, quote_price]
+  expected_args: {check_in: today, check_out: today+1}
+  key_facts:
+    - any: ["โอน"]
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut", "th/rates.md#การชำระเงิน"]
+
+- id: ms-04
+  language: en
+  category: pets
+  question: "Any rooms tomorrow? And can I bring my cat?"
+  answerable: true
+  expected_tools: [search_available_rooms, search_knowledge_base]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  key_facts:
+    - any: ["does not accept pets", "not accept pets", "not permitted", "not allowed", "no pets"]
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut", "en/booking_policy.md#Pet Policy"]
+
+- id: ms-05
+  language: th
+  category: room_type
+  question: "ห้องเตียงคู่คืนละเท่าไหร่ แล้วห้องกว้างกี่ตารางเมตร"
+  answerable: true
+  expected_tools: [search_available_rooms, search_knowledge_base]
+  allowed_extra_tools: [quote_price]
+  key_facts: ["16"]
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [{type_price: {type: twin}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut", "th/room_types.md#ห้องเตียงคู่ (twin)"]
+
+- id: ms-06
+  language: th
+  category: price
+  question: "ราคาห้องรวมอาหารเช้าไหม คืนละเท่าไหร่"
+  answerable: true
+  expected_tools: [search_available_rooms, search_knowledge_base]
+  allowed_extra_tools: [quote_price]
+  key_facts:
+    - any: ["ไม่มีบริการอาหารเช้า", "ไม่มีอาหารเช้า", "ไม่รวมอาหารเช้า"]
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [cheapest_price]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut", "th/rates.md#สิ่งที่ไม่รวมในราคาห้องพัก"]

@@ -1,0 +1,89 @@
+# คำทักทาย / ขอบคุณ (ไม่ควรเรียก tool และไม่ควรปฏิเสธ) และคำถามนอกเรื่อง (ไม่ควรตอบเนื้อหานอกเรื่อง)
+# คำถามนอกเรื่องตั้ง answerable: null เพราะบอทอาจตอบด้วยประโยคปฏิเสธมาตรฐาน หรือบอกสุภาพว่าตอบได้เฉพาะเรื่องรีสอร์ทก็ได้
+# ทั้งสองแบบถือว่าถูก ตัวตัดสินคือ forbidden (เนื้อหานอกเรื่องที่ไม่ควรตอบ) และ expected_tools
+
+- id: gr-01
+  language: th
+  category: greeting
+  question: "สวัสดีค่ะ"
+  answerable: true
+  expected_tools: []
+  reference_answer: "สวัสดีค่ะ ยินดีต้อนรับสู่พูนสุข รีสอร์ท มีอะไรให้ช่วยไหมคะ"
+  consistency_subset: true
+
+- id: gr-02
+  language: th
+  category: greeting
+  question: "หวัดดีครับ"
+  answerable: true
+  expected_tools: []
+  reference_answer: "สวัสดีค่ะ มีอะไรให้ช่วยไหมคะ"
+
+- id: gr-03
+  language: th
+  category: greeting
+  question: "ขอบคุณมากค่ะ"
+  answerable: true
+  expected_tools: []
+  reference_answer: "ยินดีค่ะ หากมีคำถามเพิ่มเติมสอบถามได้เลยนะคะ"
+
+- id: gr-04
+  language: en
+  category: greeting
+  question: "Hello!"
+  answerable: true
+  expected_tools: []
+  reference_answer: "Hello! Welcome to Poonsuk Resort. How can I help you?"
+
+- id: gr-05
+  language: en
+  category: greeting
+  question: "Thanks a lot"
+  answerable: true
+  expected_tools: []
+  reference_answer: "You're welcome! Let me know if you have any other questions."
+
+- id: ot-01
+  language: th
+  category: off_topic
+  question: "เมื่อคืนแมนยูเตะกับลิเวอร์พูลผลเป็นไง"
+  answerable: null
+  expected_tools: []
+  allowed_extra_tools: [search_knowledge_base]
+  forbidden: ['\d+\s*[-–:]\s*\d+', 'ชนะ', 'แพ้', 'เสมอ']
+
+- id: ot-02
+  language: th
+  category: off_topic
+  question: "ช่วยเขียนโค้ด python เรียงลำดับตัวเลขให้หน่อย"
+  answerable: null
+  expected_tools: []
+  allowed_extra_tools: [search_knowledge_base]
+  forbidden: ['```', '\bdef\s+\w+\(', '\bsorted\(', '\.sort\(', '\bprint\(']
+
+- id: ot-03
+  language: th
+  category: off_topic
+  question: "สอนทำต้มยำกุ้งหน่อย"
+  answerable: null
+  expected_tools: []
+  allowed_extra_tools: [search_knowledge_base]
+  forbidden: ['ข่า', 'ตะไคร้', 'ใบมะกรูด', 'น้ำปลา']
+
+- id: ot-04
+  language: th
+  category: off_topic
+  question: "ซื้อหุ้นตัวไหนดีช่วงนี้"
+  answerable: null
+  expected_tools: []
+  allowed_extra_tools: [search_knowledge_base]
+  forbidden: ['\b[A-Z]{2,6}\b(?=\s*(?:น่าซื้อ|น่าสนใจ|แนะนำ))', 'แนะนำให้ซื้อ']
+
+- id: ot-05
+  language: en
+  category: off_topic
+  question: "Write me a poem about the ocean"
+  answerable: null
+  expected_tools: []
+  allowed_extra_tools: [search_knowledge_base]
+  forbidden: ['(?i)\bwaves?\b', '(?i)\btides?\b']

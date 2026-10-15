@@ -6,7 +6,7 @@
 ก่อนทำ embedding ตาม convention ของโมเดล (ดู model card บน HuggingFace)
 """
 
-from functools import lru_cache
+import threading
 
 from sentence_transformers import SentenceTransformer
 
@@ -28,7 +28,22 @@ class EmbeddingService:
         return self._model.encode(prefixed, normalize_embeddings=True).tolist()
 
 
-@lru_cache
+_load_lock = threading.Lock()
+_instance: EmbeddingService | None = None
+
+
 def get_embedding_service() -> EmbeddingService:
-    """คืนค่า EmbeddingService แบบ cache ไว้ตัวเดียว เพราะการโหลดโมเดลใช้เวลาและหน่วยความจำ"""
-    return EmbeddingService()
+    """คืนค่า EmbeddingService ตัวเดียวทั้งแอป เพราะการโหลดโมเดลใช้เวลาและหน่วยความจำ
+
+    **ต้องโหลดทีละ thread** — โมเดลถูกโหลดตอน request แรก เดิมใช้ lru_cache ซึ่งไม่กันการเรียกซ้อน
+    ถ้ามีหลาย request เข้ามาพร้อมกันตอน container เพิ่งเปิด ทุก thread จะโหลดโมเดลพร้อมกัน
+    แล้ว transformers พังด้วย "Cannot copy out of meta tensor" และพังค้างทุก request
+    จนกว่าจะ restart (เจอจริงตอนยิงทดสอบ 4 session พร้อมกันหลัง rebuild: 500 ทั้ง 175 ข้อความ)
+    เช็คซ้ำหลังได้ lock เพื่อให้ thread ที่รออยู่ได้ตัวที่โหลดเสร็จแล้ว ไม่โหลดซ้ำอีกรอบ
+    """
+    global _instance
+    if _instance is None:
+        with _load_lock:
+            if _instance is None:
+                _instance = EmbeddingService()
+    return _instance

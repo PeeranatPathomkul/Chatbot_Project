@@ -1,0 +1,262 @@
+# คำถามข้อมูลสดจากระบบจอง — ห้ามเขียนเฉลยตายตัว
+# harness เรียก Booking API ตรง (GET /rooms?checkIn=&checkOut=, /rooms, /restaurants, /payment/info)
+# ทั้งก่อนและหลังถามบอท ถ้าผลสองครั้งไม่ตรงกัน (มีคนจองระหว่างทาง) ข้อนั้นถูกตัดเป็น indeterminate
+# snapshot ทั้งสองครั้งถูกบันทึกลง raw
+#
+# live.checks ที่ใช้ได้ (คำนวณจาก snapshot ตอนรัน):
+#   availability_answer       ไม่มีห้องว่าง -> ต้องบอกว่าไม่ว่าง/เต็ม, มีห้องว่าง -> ต้องเอ่ยชื่อห้องว่างอย่างน้อย 1 ห้อง
+#   available_names_all       ต้องเอ่ยชื่อห้องว่างครบทุกห้อง
+#   available_count           จำนวนห้องว่าง
+#   cheapest_price            ราคาต่อคืนที่ถูกที่สุดในห้องว่าง
+#   total_price: {rooms: N}   ราคาต่อคืนที่ถูกที่สุด x จำนวนคืน x N (กติกาเดียวกับ quote_price ที่ไม่ระบุห้อง)
+#   rooms_of_type: {type: twin|single}   ชื่อห้องว่างของชนิดนั้นทุกห้อง (หรือบอกว่าไม่มี)
+#   type_price: {type: ...}   ราคาต่อคืนของห้องชนิดนั้น
+#   rooms_with_amenity: {amenity: ...}   ชื่อห้องว่างที่มีของชิ้นนั้นทุกห้อง
+#   max_capacity              จำนวนผู้เข้าพักสูงสุดต่อห้องในแอป
+#   guests_plan: {guests: N}  จำนวนห้องที่ต้องใช้ คิดจาก capacity สด + กติกาเตียงเสริมในคลัง (ห้องละไม่เกิน 1, คืนละ <อัตราจาก booking_policy.md>)
+#   grand_total: {guests: N}  ค่าห้อง + ค่าเตียงเสริม ของแบบที่ใช้ห้องน้อยที่สุด
+#   restaurant_names_min: {n: N}   เอ่ยชื่อร้านจาก /restaurants อย่างน้อย N ร้าน
+#   restaurant_match: {pattern: regex}   เอ่ยชื่อร้านที่ชื่อ/ประเภท/คำอธิบายตรง pattern อย่างน้อย 1 ร้าน
+#   promptpay_id / hold_minutes   ค่าจาก /payment/info
+#   extra_bed_total: {beds: N, nights: M}   อัตราเตียงเสริมจากคลัง x N x M (ไม่ต้องใช้ dates)
+# ทุกข้อในไฟล์นี้ตรวจ no_fake_rooms อัตโนมัติ: ชื่อห้องรูปแบบ [A-Z]\d ในคำตอบต้องมีอยู่ใน GET /rooms
+
+- id: lv-01
+  language: th
+  category: availability
+  question: "คืนนี้มีห้องว่างไหมคะ"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: today, check_out: today+1}
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+  consistency_subset: true
+
+- id: lv-02
+  language: th
+  category: availability
+  question: "เสาร์อาทิตย์นี้มีห้องว่างไหม"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: this_weekend, check_out: this_weekend+2}
+  live:
+    dates: {check_in: this_weekend, check_out: this_weekend+2}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: lv-03
+  language: th
+  category: availability
+  question: "เสาร์อาทิตย์หน้าเหลือห้องว่างกี่ห้อง"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: next_weekend, check_out: next_weekend+2}
+  live:
+    dates: {check_in: next_weekend, check_out: next_weekend+2}
+    checks: [available_count]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: lv-04
+  language: th
+  category: price
+  question: "ห้องพักคืนละเท่าไหร่คะ"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price, search_knowledge_base]
+  # ไม่ระบุวันที่ -> กติกาของแอปคือใช้วันนี้ถึงพรุ่งนี้
+  expected_args: {check_in: today, check_out: today+1}
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [cheapest_price]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+  consistency_subset: true
+
+- id: lv-05
+  language: th
+  category: total_price
+  question: "จอง 2 ห้อง 3 คืน เข้าวันที่ {today+21|th} ทั้งหมดกี่บาท"
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_available_rooms]
+  expected_args: {check_in: today+21, check_out: today+24, rooms: 2}
+  live:
+    dates: {check_in: today+21, check_out: today+24}
+    checks: [{total_price: {rooms: 2}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+  consistency_subset: true
+
+- id: lv-06
+  language: th
+  category: total_price
+  question: "อยู่ 1 อาทิตย์ เริ่ม {today+30|th} ห้องเดียว ราคาเท่าไหร่"
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_available_rooms]
+  expected_args: {check_in: today+30, check_out: today+37, rooms: 1}
+  live:
+    dates: {check_in: today+30, check_out: today+37}
+    checks: [{total_price: {rooms: 1}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: lv-07
+  language: th
+  category: room_type
+  question: "ศุกร์นี้มีห้องเตียงคู่ว่างไหม"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: upcoming_fri, check_out: upcoming_fri+1}
+  live:
+    dates: {check_in: upcoming_fri, check_out: upcoming_fri+1}
+    checks: [{rooms_of_type: {type: twin}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut", "th/room_types.md#ห้องเตียงคู่ (twin)"]
+
+- id: lv-08
+  language: th
+  category: amenities
+  question: "พรุ่งนี้มีห้องไหนที่มีตู้เย็นบ้าง"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: tomorrow, check_out: tomorrow+1}
+  live:
+    dates: {check_in: tomorrow, check_out: tomorrow+1}
+    checks: [{rooms_with_amenity: {amenity: "Mini fridge"}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut (amenities)", "th/room_types.md#สิ่งอำนวยความสะดวกในห้อง"]
+
+- id: lv-09
+  language: th
+  category: capacity
+  question: "ห้องหนึ่งจองได้กี่คน"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [search_knowledge_base, quote_price]
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [max_capacity]
+  source_ref: ["booking_api:GET /rooms (capacity)", "th/faq.md#ถาม: ห้องหนึ่งพักได้กี่คน"]
+
+- id: lv-10
+  language: th
+  category: guests_plan
+  question: "มา 3 คน ห้องเดียวได้ไหม"
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_available_rooms, search_knowledge_base]
+  expected_args: {guests: 3}
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [{guests_plan: {guests: 3}}]
+  source_ref: ["booking_api:GET /rooms (capacity)", "th/booking_policy.md#การจองและการชำระเงิน"]
+  consistency_subset: true
+
+- id: lv-11
+  language: th
+  category: guests_plan
+  question: "มากัน 5 คน ต้องจองกี่ห้อง"
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_available_rooms, search_knowledge_base]
+  expected_args: {guests: 5}
+  live:
+    dates: {check_in: today, check_out: today+1}
+    checks: [{guests_plan: {guests: 5}}]
+  source_ref: ["booking_api:GET /rooms (capacity)", "th/booking_policy.md#การจองและการชำระเงิน"]
+
+- id: lv-12
+  language: th
+  category: restaurants
+  question: "แถวรีสอร์ทมีร้านอาหารอะไรบ้าง"
+  answerable: true
+  expected_tools: [list_restaurants]
+  live:
+    checks: [{restaurant_names_min: {n: 2}}]
+  source_ref: ["booking_api:GET /restaurants"]
+  consistency_subset: true
+
+- id: lv-13
+  language: th
+  category: restaurants
+  question: "มีร้านชาบูใกล้ๆ ไหม"
+  answerable: true
+  expected_tools: [list_restaurants]
+  live:
+    checks: [{restaurant_match: {pattern: "ชาบู|shabu"}}]
+  source_ref: ["booking_api:GET /restaurants"]
+
+- id: lv-14
+  language: th
+  category: payment
+  question: "โอนเงินเข้าพร้อมเพย์เบอร์อะไรคะ"
+  answerable: true
+  expected_tools: [get_payment_info]
+  allowed_extra_tools: [search_knowledge_base]
+  live:
+    checks: [promptpay_id]
+  source_ref: ["booking_api:GET /payment/info"]
+
+- id: lv-15
+  language: th
+  category: payment
+  question: "จองแล้วต้องอัปโหลดสลิปภายในกี่นาที"
+  answerable: true
+  expected_tools: [get_payment_info]
+  allowed_extra_tools: [search_knowledge_base]
+  live:
+    checks: [hold_minutes]
+  source_ref: ["booking_api:GET /payment/info"]
+
+- id: lv-16
+  language: en
+  category: availability
+  question: "Do you have rooms this weekend?"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: this_weekend, check_out: this_weekend+2}
+  live:
+    dates: {check_in: this_weekend, check_out: this_weekend+2}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: lv-17
+  language: en
+  category: total_price
+  question: "How much for one room for 2 nights from {today+14|en}?"
+  answerable: true
+  expected_tools: [quote_price]
+  allowed_extra_tools: [search_available_rooms]
+  expected_args: {check_in: today+14, check_out: today+16, rooms: 1}
+  live:
+    dates: {check_in: today+14, check_out: today+16}
+    checks: [{total_price: {rooms: 1}}]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]
+
+- id: lv-18
+  language: en
+  category: restaurants
+  question: "Any cafes near the resort?"
+  answerable: true
+  expected_tools: [list_restaurants]
+  live:
+    checks: [{restaurant_match: {pattern: "คาเฟ่|cafe|coffee|กาแฟ"}}]
+  source_ref: ["booking_api:GET /restaurants"]
+
+- id: lv-19
+  language: th
+  category: availability
+  # "22/11" แบบไทย = วันที่ 22 เดือน 11 (แอปมีตัวตรวจ date_format_mismatch สำหรับเคสนี้)
+  question: "วันที่ {today+40|slash} มีห้องว่างไหม"
+  answerable: true
+  expected_tools: [search_available_rooms]
+  allowed_extra_tools: [quote_price]
+  expected_args: {check_in: today+40, check_out: today+41}
+  live:
+    dates: {check_in: today+40, check_out: today+41}
+    checks: [availability_answer]
+  source_ref: ["booking_api:GET /rooms?checkIn&checkOut"]

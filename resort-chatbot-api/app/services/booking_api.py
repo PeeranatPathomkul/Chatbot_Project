@@ -173,6 +173,18 @@ class BookingAPIClient:
             "note": "ยอดนี้เป็นค่าห้องที่ชำระในแอป ไม่รวมเตียงเสริม",
         }
 
+    async def list_rooms(self) -> list[dict[str, Any]]:
+        """ทุกห้องที่ไม่ได้ปิดซ่อม โดยไม่สนว่าว่างหรือไม่ — ใช้หาว่าห้องไหน "มีแต่ไม่ว่าง"
+
+        ห้ามใช้ตอบว่าห้องว่าง (เหตุผลอยู่ใน docstring ของ search_rooms)
+        """
+        rooms = await self._get("/rooms")
+        return [_trim_room(room) for room in rooms]
+
+    async def get_room(self, room_id: str) -> dict[str, Any]:
+        """รายละเอียดห้องเดียว ได้แม้ห้องปิดซ่อม — ใช้เติมข้อมูลห้องให้การจองของลูกค้า"""
+        return _trim_room(await self._get(f"/rooms/{room_id}"))
+
     async def list_restaurants(self) -> list[dict[str, Any]]:
         restaurants = await self._get("/restaurants")
         return [_trim_restaurant(item) for item in restaurants]
@@ -252,8 +264,12 @@ def _trim_restaurant(restaurant: dict[str, Any]) -> dict[str, Any]:
 
 
 def _trim_booking(booking: dict[str, Any]) -> dict[str, Any]:
+    # customerName ถูกยกขึ้นไปไว้ระดับบนสุดใน group_bookings ไม่ได้ซ้ำทุกรายการ
+    # roomId ใช้ดึงรายละเอียดห้อง (ชนิดเตียง ของในห้อง) ให้การจองที่ยังไม่ถึง
     return {
         "id": booking["id"],
+        "customerName": booking.get("customerName", ""),
+        "roomId": booking.get("roomId", ""),
         "roomName": booking.get("roomName", ""),
         "checkIn": booking["checkIn"],
         "checkOut": booking["checkOut"],
@@ -282,10 +298,22 @@ def group_bookings(
     ปัจจุบัน = checked_in หรือ (pending/approved และ checkOut > วันนี้)
     นอกนั้นเป็นประวัติ (เช็คเอาท์แล้ว ยกเลิกแล้ว หรือเลยวันเช็คเอาท์ไปแล้ว)
     วันที่เป็น YYYY-MM-DD จึงเทียบเป็น string ได้ตรง ๆ
+
+    **stayedCount แยกจาก pastBookingsCount** — ทดสอบจริง ลูกค้าถาม "เคยพักกี่ครั้ง"
+    บอทตอบ 14 ครั้งจาก pastBookingsCount ทั้งที่ 11 รายการในนั้นคือที่ยกเลิก
+    เช็คเอาท์จริงแค่ 3 ครั้ง จึงนับแยกให้เสร็จในโค้ด
+
+    **recentPastBookings ส่งไปเสมอ** — โมเดลแทบไม่เคยส่ง include_past มาเอง
+    ลูกค้าถาม "การจองที่ยกเลิกไปได้เงินคืนหรือยัง" แล้วบอทตอบเป็นนโยบายลอย ๆ
+    ทั้งที่มีรายการที่ refunded อยู่จริง 5 รายการล่าสุดพอตอบคำถามแบบนี้ได้โดยไม่กิน token มาก
     """
     current: list[dict[str, Any]] = []
     past: list[dict[str, Any]] = []
+    customer_name = ""
     for booking in bookings:
+        booking = dict(booking)
+        customer_name = customer_name or booking.pop("customerName", "")
+        booking.pop("customerName", None)
         is_current = booking.get("status") == "checked_in" or (
             booking.get("status") in _ACTIVE_BOOKING_STATUSES
             and str(booking.get("checkOut", ""))[:10] > today
@@ -293,16 +321,119 @@ def group_bookings(
         (current if is_current else past).append(booking)
 
     current.sort(key=lambda b: str(b.get("checkIn", "")))
+    past.sort(key=lambda b: str(b.get("checkIn", "")), reverse=True)
     result: dict[str, Any] = {
         "today": today,
+        "customerName": customer_name,
         "currentBookings": current,
         "pastBookingsCount": len(past),
+        "stayedCount": sum(1 for b in past if b.get("status") == "checked_out"),
+        "cancelledCount": sum(1 for b in past if b.get("status") == "cancelled"),
+        "recentPastBookings": past[:_RECENT_PAST_LIMIT],
     }
     if include_past:
-        result["pastBookings"] = sorted(
-            past, key=lambda b: str(b.get("checkIn", "")), reverse=True
-        )
+        result["pastBookings"] = past
     return result
+
+
+_RECENT_PAST_LIMIT = 5
+
+_THAI_MONTHS = (
+    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+)
+_EN_MONTHS = (
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+)
+_BUDDHIST_ERA_OFFSET = 543
+
+
+def format_date(value: date, language: str = "th") -> str:
+    if language == "th":
+        return f"{value.day} {_THAI_MONTHS[value.month - 1]} {value.year + _BUDDHIST_ERA_OFFSET}"
+    return f"{value.day} {_EN_MONTHS[value.month - 1]} {value.year}"
+
+
+def format_stay_dates(check_in: str, check_out: str, language: str = "th") -> str:
+    """ข้อความวันเข้า-ออกสำเร็จรูปให้โมเดลพูดตาม
+
+    ทดสอบจริงบอทเขียนวันที่ปนกันสามแบบในบทสนทนาเดียว (2569, 2027, 2026-10-07)
+    และถาม "13-15 เมษา" แล้วตอบกลับว่า "13-16 เมษายน" การแปลงวันที่ให้เสร็จในโค้ด
+    ทำให้ลูกค้าเห็นวันที่ที่ใช้ค้นจริงในรูปแบบเดียวกันทุกครั้ง
+    """
+    start, end = date.fromisoformat(check_in), date.fromisoformat(check_out)
+    if language == "th":
+        return f"เข้าพัก {format_date(start)} ออก {format_date(end)}"
+    return f"check-in {format_date(start, 'en')}, check-out {format_date(end, 'en')}"
+
+
+def plan_rooms_for_guests(
+    available: list[dict[str, Any]],
+    guests: int,
+    nights: int,
+    extra_bed_rate: int | None,
+    max_extra_beds_per_room: int = 1,
+) -> dict[str, Any]:
+    """หาว่าลูกค้า N คนต้องจองกี่ห้อง ทั้งแบบไม่ขอเตียงเสริมและแบบขอเตียงเสริม
+
+    **ทำไมต้องคิดในโค้ด** — ทดสอบจริง 3 รอบ โมเดลคิดเรื่องนี้ผิดซ้ำทุกครั้งแม้กติกา
+    ใน SYSTEM_PROMPT ข้อ 5 จะเขียนไว้ละเอียด:
+    - "มา 4 คน ห้องเดียวแล้วขอเตียงเสริมได้ไหม" -> "ได้ค่ะ" (ห้องเดียวรับได้แค่ 3)
+    - "มา 3 คน รวมเตียงเสริมจ่ายเท่าไหร่" -> คิดเป็น 2 ห้อง 2,600 แทน 1 ห้อง + เตียงเสริม
+    - "มา 6 คน" -> แนะนำ 3 ห้อง ทั้งที่ 2 ห้อง + เตียงเสริม 2 เตียงถูกกว่า
+
+    เลือกห้องจากถูกไปแพง แล้วหาจำนวนห้องน้อยที่สุดที่พอสำหรับแต่ละแบบ
+    ค่าเตียงเสริมรับเข้ามาเป็นพารามิเตอร์ เพราะคลังความรู้เป็นเจ้าของตัวเลขนั้น
+    ส่วน "ห้องละไม่เกิน 1 เตียง" มาจากคลังความรู้เช่นกัน (booking_policy.md)
+    """
+    rooms = sorted(available, key=lambda r: (r["pricePerNight"], -r["capacity"]))
+    max_capacity = max((r["capacity"] for r in rooms), default=0)
+
+    def cheapest_prefix(extra_beds_allowed: bool) -> dict[str, Any] | None:
+        total_capacity = 0
+        for count, room in enumerate(rooms, start=1):
+            total_capacity += room["capacity"]
+            reach = total_capacity + (count * max_extra_beds_per_room if extra_beds_allowed else 0)
+            if reach >= guests:
+                chosen = rooms[:count]
+                extra_beds = max(0, guests - total_capacity) if extra_beds_allowed else 0
+                room_total = sum(r["pricePerNight"] for r in chosen) * nights
+                if not extra_beds:
+                    bed_total: int | None = 0
+                elif extra_bed_rate is None:
+                    bed_total = None  # ไม่รู้ค่าเตียงเสริม ห้ามเดา ให้โมเดลบอกว่าไม่มีข้อมูล
+                else:
+                    bed_total = extra_beds * extra_bed_rate * nights
+                return {
+                    "rooms": count,
+                    "roomNames": [r["name"] for r in chosen],
+                    "guestsToEnterInApp": min(guests, total_capacity),
+                    "extraBeds": extra_beds,
+                    "payInApp": room_total,
+                    "payAtResortForExtraBeds": bed_total,
+                    "grandTotal": None if bed_total is None else room_total + bed_total,
+                }
+        return None
+
+    without_beds = cheapest_prefix(extra_beds_allowed=False)
+    with_beds = cheapest_prefix(extra_beds_allowed=True)
+    options = [opt for opt in (without_beds, with_beds) if opt is not None]
+    # แบบขอเตียงเสริมที่สุดท้ายไม่ต้องใช้เตียงเสริมเลย ก็คือแบบแรกซ้ำ
+    if len(options) == 2 and options[1]["extraBeds"] == 0:
+        options = options[:1]
+
+    return {
+        "guests": guests,
+        "nights": nights,
+        "maxGuestsPerRoomInApp": max_capacity,
+        "maxGuestsPerRoomWithExtraBed": max_capacity + max_extra_beds_per_room,
+        "fitsInOneRoom": guests <= max_capacity,
+        "fitsInOneRoomWithExtraBed": guests <= max_capacity + max_extra_beds_per_room,
+        "enoughRoomsAvailable": bool(options),
+        "availableRoomCount": len(rooms),
+        "extraBedRatePerNight": extra_bed_rate,
+        "options": options,
+    }
 
 
 @lru_cache
