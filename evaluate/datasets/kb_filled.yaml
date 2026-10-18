@@ -1,0 +1,457 @@
+# คำถามที่เดิมอยู่ใน unanswerable.yaml (หัวข้อเป็น <<รอเติม>>) แล้วเจ้าของรีสอร์ทเติมข้อมูลให้เมื่อ 2026-10-18
+# จึงย้ายมาเป็นข้อที่ตอบได้ เฉลยคัดจากข้อความที่เติมใน indexing-pipeline/data (validator ตรวจว่าอยู่ในไฟล์จริง)
+# former_id = id เดิมใน unanswerable.yaml (ใช้เทียบกับผลรอบก่อนเติมข้อมูล)
+# แยกเป็น suite ของตัวเอง เพื่อให้รายงานแสดงผลของ "ข้อมูลที่เพิ่งเติม" แยกจากคลังเดิม
+
+- id: kf-th-01
+  former_id: un-th-01
+  language: th
+  category: checkout
+  question: "ขอเช็คเอาท์บ่ายสองได้ไหม เสียเงินเพิ่มเท่าไหร่"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/rates.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่รับเช็คเอาท์หลัง", "เช็คเอาท์หลัง 12.00 น. ไม่ได้", "ไม่สามารถเช็คเอาท์", "ไม่ได้"]
+    - "12:00"
+  forbidden: ['\d[\d,]*\s*(?:บาท|THB)']
+  reference_answer: "ไม่ได้ค่ะ รีสอร์ทไม่รับเช็คเอาท์หลัง 12.00 น."
+  source_ref: ["th/booking_policy.md#เช็คเอาท์ช้ากว่ากำหนด (Late check-out)"]
+  consistency_subset: true
+
+- id: kf-th-02
+  former_id: un-th-02
+  language: th
+  category: documents
+  question: "เช็คอินต้องใช้บัตรประชาชนตัวจริงไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["บัตรประชาชน"]
+  reference_answer: "ต้องแสดงบัตรประชาชนตัวจริงต่อพนักงานตอนเช็คอิน ชาวต่างชาติใช้หนังสือเดินทาง (passport) แทน"
+  source_ref: ["th/booking_policy.md#ผู้เข้าพักต้องแสดง"]
+
+- id: kf-th-03
+  former_id: un-th-03
+  language: th
+  category: deposit
+  question: "ต้องวางเงินประกันกี่บาทคะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่เก็บเงินประกัน", "ไม่มีเงินประกัน", "ไม่ต้องวางเงินประกัน", "ไม่มีการเก็บเงินประกัน"]
+  forbidden: ['\d[\d,]*\s*(?:บาท|THB)']
+  reference_answer: "ไม่ต้องวางค่ะ รีสอร์ทไม่เก็บเงินประกันความเสียหาย"
+  source_ref: ["th/booking_policy.md#เงินประกันความเสียหาย"]
+  consistency_subset: true
+
+- id: kf-th-04
+  former_id: un-th-04
+  language: th
+  category: cancellation
+  question: "ถ้ายกเลิกจะได้เงินคืนเต็มจำนวนไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["เต็มจำนวน"]
+    - any: ["ก่อนวันเช็คอิน"]
+  reference_answer: "ยกเลิกก่อนวันเช็คอินได้รับเงินคืนเต็มจำนวนค่ะ ตั้งแต่วันเช็คอินเป็นต้นไปไม่มีการคืนเงิน"
+  source_ref: ["th/booking_policy.md#คืนเงินเต็มจำนวนหรือไม่", "th/faq.md#คืนเงินเต็มจำนวนหรือไม่"]
+
+- id: kf-th-05
+  former_id: un-th-05
+  language: th
+  category: cancellation
+  question: "คืนเงินใช้เวลากี่วันคะ"
+  answerable: true
+  expected_sources: [th/booking_policy.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["1 ชั่วโมง"]
+  forbidden: ['\d+\s*(?:วันทำการ|วัน)(?!เช็คอิน)']
+  reference_answer: "เจ้าหน้าที่โอนเงินคืนภายใน 1 ชั่วโมงหลังยกเลิกค่ะ"
+  source_ref: ["th/booking_policy.md#ระยะเวลาคืนเงิน", "th/faq.md#ระยะเวลาคืนเงิน"]
+
+- id: kf-th-06
+  former_id: un-th-06
+  language: th
+  category: date_change
+  question: "จองไว้แล้ว ขอเลื่อนวันเข้าพักได้ไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [get_my_bookings]
+  key_facts:
+    - any: ["เลื่อนวันเข้าพักได้", "เลื่อนได้"]
+    - "2 วัน"
+  reference_answer: "เลื่อนวันเข้าพักได้ค่ะ โดยต้องแจ้งรีสอร์ทล่วงหน้าอย่างน้อย 2 วัน"
+  source_ref: ["th/booking_policy.md#การเลื่อนวันเข้าพัก:"]
+
+- id: kf-th-07
+  former_id: un-th-07
+  language: th
+  category: smoking
+  question: "มีจุดสูบบุหรี่ข้างนอกห้องไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ที่จอดรถ"]
+  reference_answer: "มีค่ะ จุดสูบบุหรี่อยู่ด้านนอกห้อง บริเวณที่จอดรถ"
+  source_ref: ["th/booking_policy.md#พื้นที่สูบบุหรี่"]
+
+- id: kf-th-08
+  former_id: un-th-08
+  language: th
+  category: smoking
+  question: "ถ้าเผลอสูบในห้องโดนปรับเท่าไหร่"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ค่าปรับ"]
+  # จำนวนเงินค่าปรับยังไม่มีในคลัง ห้ามมีตัวเลข
+  forbidden: ['\d[\d,]*\s*(?:บาท|THB)']
+  reference_answer: "ห้องพักเป็นห้องปลอดบุหรี่ ไม่มีค่าทำความสะอาดพิเศษ แต่มีค่าปรับถ้าไม่ปฏิบัติตามกฎ (ยังไม่มีข้อมูลจำนวนเงินค่าปรับ)"
+  source_ref: ["th/booking_policy.md#ค่าปรับกรณีฝ่าฝืน"]
+
+- id: kf-th-09
+  former_id: un-th-09
+  language: th
+  category: noise
+  question: "เปิดเพลงได้ถึงกี่โมง มีเวลาห้ามเสียงดังไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["22:00", "06:00"]
+  reference_answer: "ขอความร่วมมืองดเสียงดังตั้งแต่ 22.00 น. ถึง 06.00 น."
+  source_ref: ["th/booking_policy.md#เวลาเงียบ (Quiet hours)"]
+
+- id: kf-th-10
+  former_id: un-th-10
+  language: th
+  category: noise
+  question: "จัดปาร์ตี้วันเกิดเล็กๆ ในห้องได้ไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่อนุญาตให้จัดปาร์ตี้", "ไม่อนุญาต", "ไม่ได้"]
+  reference_answer: "ไม่ได้ค่ะ ไม่อนุญาตให้จัดปาร์ตี้ในห้องพัก"
+  source_ref: ["th/booking_policy.md#จัดปาร์ตี้ในห้องพัก"]
+
+- id: kf-th-11
+  former_id: un-th-11
+  language: th
+  category: visitors
+  question: "เพื่อนที่ไม่ได้พักด้วย แวะมาหาที่ห้องได้ไหม"
+  answerable: true
+  expected_sources: [th/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่อนุญาต", "ไม่ได้"]
+  reference_answer: "ไม่ได้ค่ะ ไม่อนุญาตให้บุคคลที่ไม่ได้เข้าพักเข้ามาในรีสอร์ท"
+  source_ref: ["th/booking_policy.md#ผู้มาเยี่ยมที่ไม่ได้พัก"]
+
+- id: kf-th-12
+  former_id: un-th-12
+  language: th
+  category: price_policy
+  question: "ราคาห้องรวม VAT แล้วหรือยัง"
+  answerable: true
+  expected_sources: [th/rates.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [search_available_rooms]
+  key_facts:
+    - any: ["รวมภาษีมูลค่าเพิ่มแล้ว", "รวมภาษีมูลค่าเพิ่ม (VAT) แล้ว", "รวม VAT แล้ว", "รวมภาษีแล้ว"]
+  reference_answer: "รวมแล้วค่ะ ราคาห้องพักรวมภาษีมูลค่าเพิ่มแล้ว"
+  source_ref: ["th/rates.md#ภาษีมูลค่าเพิ่ม (VAT)"]
+
+- id: kf-th-13
+  former_id: un-th-13
+  language: th
+  category: extra_bed
+  question: "ค่าเตียงเสริมที่จ่ายที่รีสอร์ท จ่ายเงินสดได้ไหม"
+  answerable: true
+  expected_sources: [th/rates.md, th/booking_policy.md, th/overview.md, th/faq.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ได้ทั้งเงินสดและโอน", "เงินสดหรือโอน", "เงินสดได้"]
+  reference_answer: "ได้ค่ะ ค่าเตียงเสริมชำระให้พนักงานที่เคาน์เตอร์ได้ทั้งเงินสดและโอน"
+  source_ref: ["th/rates.md#วิธีชำระค่าเตียงเสริมที่รีสอร์ท"]
+
+- id: kf-th-14
+  former_id: un-th-14
+  language: th
+  category: receipt
+  question: "ขอใบกำกับภาษีเต็มรูปได้ไหม จะเบิกบริษัท"
+  answerable: true
+  expected_sources: [th/rates.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ใบกำกับภาษีให้ได้", "ออกให้ได้", "ออกได้", "ได้ค่ะ"]
+  reference_answer: "ได้ค่ะ รีสอร์ทออกใบเสร็จและใบกำกับภาษีให้ได้"
+  source_ref: ["th/rates.md#ใบเสร็จ/ใบกำกับภาษี"]
+
+- id: kf-th-15
+  former_id: un-th-15
+  language: th
+  category: children
+  question: "มีเตียงเด็กอ่อนให้ยืมไหมคะ"
+  answerable: true
+  expected_sources: [th/room_types.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีเตียงเด็กอ่อน", "นำมาเอง"]
+  reference_answer: "ไม่มีค่ะ รีสอร์ทไม่มีเตียงเด็กอ่อนให้ยืม ต้องนำมาเอง"
+  source_ref: ["th/room_types.md#เตียงเด็กอ่อน (baby cot)"]
+
+- id: kf-th-16
+  former_id: un-th-16
+  language: th
+  category: wifi
+  question: "รหัสไวไฟอะไรคะ"
+  answerable: true
+  expected_sources: [th/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["อยู่ในห้อง"]
+  # รหัสจริงไม่อยู่ในคลัง ห้ามแต่งรหัสขึ้นมา
+  # รหัสที่แต่งขึ้นมักมีตัวเลข — ต้องมีตัวเลขด้วยถึงนับ (กันไม่ให้จับ "password is inside your room")
+  forbidden: ['(?:รหัส(?:ผ่าน)?|password)\s*(?:คือ|is|:)\s*[A-Za-z]*\d[A-Za-z0-9]{3,}']
+  reference_answer: "รหัส Wi-Fi อยู่ในห้องพักค่ะ"
+  source_ref: ["th/facilities.md#รหัสผ่าน Wi-Fi"]
+
+- id: kf-th-17
+  former_id: un-th-17
+  language: th
+  category: food
+  question: "ซื้ออาหารเข้ามากินในห้องได้ไหม"
+  answerable: true
+  expected_sources: [th/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["อนุญาตให้นำอาหาร", "ทานในห้องได้", "กินในห้องได้", "นำเข้ามาได้", "ได้ค่ะ"]
+  reference_answer: "ได้ค่ะ อนุญาตให้นำอาหารจากข้างนอกเข้ามาทานในห้องได้"
+  source_ref: ["th/facilities.md#นำอาหารจากข้างนอกเข้ามาทานในห้อง"]
+
+- id: kf-th-18
+  former_id: un-th-18
+  language: th
+  category: food
+  question: "ในห้องมีน้ำดื่มฟรีให้ไหม"
+  answerable: true
+  expected_sources: [th/facilities.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [search_available_rooms]
+  key_facts:
+    - any: ["น้ำดื่มให้ฟรี", "น้ำดื่มฟรี", "มีน้ำดื่ม"]
+  reference_answer: "มีค่ะ มีน้ำดื่มให้ฟรีในห้องพัก"
+  source_ref: ["th/facilities.md#ตู้กดน้ำหรือน้ำดื่มฟรี"]
+
+- id: kf-th-19
+  former_id: un-th-19
+  language: th
+  category: services
+  question: "มีบริการซักผ้าไหม"
+  answerable: true
+  expected_sources: [th/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีบริการซักรีด", "ไม่มีบริการซักผ้า", "ไม่มีซักรีด"]
+  forbidden: ['\d[\d,]*\s*(?:บาท|THB)']
+  reference_answer: "ไม่มีค่ะ รีสอร์ทไม่มีบริการซักรีด"
+  source_ref: ["th/facilities.md#ซักรีด"]
+
+- id: kf-th-20
+  former_id: un-th-20
+  language: th
+  category: transport
+  question: "มีรถรับส่งไหมคะ"
+  answerable: true
+  expected_sources: [th/facilities.md, th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีบริการรถรับส่ง", "ไม่มีรถรับส่ง"]
+  forbidden: ['\d[\d,]*\s*(?:บาท|THB)']
+  reference_answer: "ไม่มีค่ะ รีสอร์ทไม่มีบริการรถรับส่ง"
+  source_ref: ["th/facilities.md#รถรับส่ง"]
+  consistency_subset: true
+
+- id: kf-th-21
+  former_id: un-th-21
+  language: th
+  category: contact
+  question: "มีอีเมลหรือเว็บไซต์ไหม"
+  answerable: true
+  expected_sources: [th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีอีเมล"]
+    - any: ["Poonsuk Resort Sadao", "Facebook", "เฟซบุ๊ก"]
+  forbidden: ['[\w.+-]+@[\w-]+\.[\w.]+', 'www\.']
+  reference_answer: "ไม่มีค่ะ รีสอร์ทไม่มีอีเมลหรือเว็บไซต์สำหรับการจอง ติดต่อได้ทาง Facebook: Poonsuk Resort Sadao"
+  source_ref: ["th/overview.md#อีเมลและเว็บไซต์"]
+
+- id: kf-th-22
+  former_id: un-th-22
+  language: th
+  category: booking_channel
+  question: "จองผ่าน Agoda ได้ไหม"
+  answerable: true
+  expected_sources: [th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ไม่มีขายผ่าน", "ไม่ได้", "ไม่มี"]
+  reference_answer: "ไม่ได้ค่ะ รีสอร์ทไม่มีขายผ่าน Agoda, Booking.com หรือ Airbnb จองได้ผ่านแอปของรีสอร์ท"
+  source_ref: ["th/overview.md#จองผ่านแอปพลิเคชันอื่น"]
+
+- id: kf-th-23
+  former_id: un-th-23
+  language: th
+  category: languages
+  question: "พนักงานพูดภาษามลายูได้ไหม"
+  answerable: true
+  expected_sources: [th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["ภาษาไทยเท่านั้น", "ไทยเท่านั้น"]
+  reference_answer: "ไม่ได้ค่ะ พนักงานสื่อสารได้ภาษาไทยเท่านั้น"
+  source_ref: ["th/overview.md#พนักงานสื่อสารได้"]
+
+- id: kf-th-24
+  former_id: un-th-24
+  language: th
+  category: location
+  question: "รหัสไปรษณีย์ของรีสอร์ทคืออะไร"
+  answerable: true
+  expected_sources: [th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["90120"]
+  reference_answer: "รหัสไปรษณีย์ 90120 ค่ะ"
+  source_ref: ["th/location_and_travel.md#รหัสไปรษณีย์"]
+
+- id: kf-th-25
+  former_id: un-th-25
+  language: th
+  category: location
+  question: "ขอลิงก์ Google Maps หน่อย"
+  answerable: true
+  expected_sources: [th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["maps.app.goo.gl/CfSNWgdgiRaG7Mzf6"]
+  reference_answer: "ลิงก์ Google Maps ของรีสอร์ท: https://maps.app.goo.gl/CfSNWgdgiRaG7Mzf6"
+  source_ref: ["th/location_and_travel.md#ลิงก์ Google Maps"]
+
+- id: kf-th-26
+  former_id: un-th-26
+  language: th
+  category: location
+  question: "ตลาดนัดฮาลาลสะเดาเปิดวันไหนบ้าง"
+  answerable: true
+  expected_sources: [th/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  allowed_extra_tools: [list_restaurants]
+  key_facts:
+    - any: ["พฤหัส"]
+  # เวลาเปิดปิดยังไม่มีในคลัง
+  forbidden: ['\d{1,2}[.:]\d{2}\s*(?:น|-)']
+  reference_answer: "ตลาดนัดฮาลาลสะเดาเปิดทุกวันพฤหัสบดีค่ะ (ยังไม่มีข้อมูลเวลาเปิดปิด)"
+  source_ref: ["th/location_and_travel.md#ตลาดนัดฮาลาลสะเดาเปิดวันไหนบ้าง"]
+
+- id: kf-th-27
+  language: th
+  category: front_desk
+  question: "เคาน์เตอร์ต้อนรับเปิดกี่โมงถึงกี่โมง"
+  answerable: true
+  expected_sources: [th/facilities.md, th/overview.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["08:00", "22:00"]
+  reference_answer: "เคาน์เตอร์ต้อนรับเปิด 08.00-22.00 น. นอกเวลาติดต่อได้ที่ 081-598-1199"
+  source_ref: ["th/facilities.md#แผนกต้อนรับ", "th/overview.md#แผนกต้อนรับเปิดให้บริการ"]
+
+- id: kf-en-01
+  former_id: un-en-01
+  language: en
+  category: checkout
+  question: "Can I check out late, like 3pm? How much extra?"
+  answerable: true
+  expected_sources: [en/booking_policy.md, en/rates.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["not possible", "cannot", "can't", "not allowed"]
+    - "12:00"
+  forbidden: ['\d[\d,]*\s*(?:THB|baht|฿)']
+  reference_answer: "Sorry, check-out after 12:00 noon is not possible."
+  source_ref: ["en/booking_policy.md#Late check-out"]
+
+- id: kf-en-02
+  former_id: un-en-02
+  language: en
+  category: deposit
+  question: "Is there a security deposit?"
+  answerable: true
+  expected_sources: [en/booking_policy.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["does not collect", "no damage deposit", "no security deposit", "no deposit"]
+  forbidden: ['\d[\d,]*\s*(?:THB|baht|฿)']
+  reference_answer: "No, the resort does not collect a damage deposit."
+  source_ref: ["en/booking_policy.md#Security deposit"]
+
+- id: kf-en-03
+  former_id: un-en-03
+  language: en
+  category: wifi
+  question: "What's the wifi password?"
+  answerable: true
+  expected_sources: [en/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["in your room", "in the room", "inside your room", "inside the room"]
+  forbidden: ['password\s*(?:is|:)\s*[A-Za-z]*\d[A-Za-z0-9]{3,}']
+  reference_answer: "The Wi-Fi password is in your room."
+  source_ref: ["en/facilities.md#Wi-Fi password"]
+
+- id: kf-en-04
+  former_id: un-en-04
+  language: en
+  category: transport
+  question: "Do you offer airport pickup from Hat Yai?"
+  answerable: true
+  expected_sources: [en/location_and_travel.md, en/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["does not offer", "not offer", "no airport", "don't offer"]
+  forbidden: ['\d[\d,]*\s*(?:THB|baht|฿)']
+  reference_answer: "No, the resort does not offer an airport transfer service."
+  source_ref: ["en/location_and_travel.md#Airport transfer"]
+
+- id: kf-en-05
+  former_id: un-en-05
+  language: en
+  category: services
+  question: "Is there laundry service?"
+  answerable: true
+  expected_sources: [en/facilities.md]
+  expected_tools: [search_knowledge_base]
+  key_facts:
+    - any: ["no laundry", "not offer laundry", "not offer a laundry", "doesn't have laundry", "does not have laundry",
+            "doesn't have a laundry", "does not have a laundry"]
+  forbidden: ['\d[\d,]*\s*(?:THB|baht|฿)']
+  reference_answer: "No, the resort has no laundry service."
+  source_ref: ["en/facilities.md#Laundry"]
+
+- id: kf-en-06
+  former_id: un-en-06
+  language: en
+  category: location
+  question: "What's the postcode of the resort?"
+  answerable: true
+  expected_sources: [en/location_and_travel.md]
+  expected_tools: [search_knowledge_base]
+  key_facts: ["90120"]
+  reference_answer: "The postcode is 90120."
+  source_ref: ["en/location_and_travel.md#Postcode"]

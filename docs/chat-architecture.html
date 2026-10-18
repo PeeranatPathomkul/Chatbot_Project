@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Poonsuk Resort — Chatbot Architecture</title>
+<style>
+  /*
+    สถาปัตยกรรมที่เน้นฝั่งแชทบอท: หน้าจอแชท (ซ้าย) → ทางเข้า (กลางซ้าย)
+    → ขั้นตอนภายใน Chatbot API (กลาง) → ระบบภายนอก (ขวา)
+    เรนเดอร์ (2200x1720, scale 2):
+      chrome --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+        --window-size=2200,1720 --screenshot=docs/chat-architecture.png file:///.../docs/chat-architecture.html
+    บทสนทนาในหน้าจอ: ข้อความเช็คอิน/เช็คเอาท์/ประโยคปฏิเสธมาจากคลังความรู้และโค้ดจริง
+    ส่วนคำตอบเรื่องห้องว่างเขียนเป็นคำอธิบาย ไม่ใส่ตัวเลข เพราะเปลี่ยนตามระบบจอง
+  */
+  :root {
+    --ink: #111827;
+    --muted: #4b5563;
+    --line: #cbd5e1;
+
+    --flutter: #c2185b;      --flutter-bg: #fdeef4;
+    --nest: #3730c4;         --nest-bg: #eef0fe;
+    --bot: #1f7a4d;          --bot-bg: #edf7f1;
+    --chroma: #0f766e;       --chroma-bg: #eaf6f5;
+    --check: #b5651d;        --check-bg: #fff8ef;
+    --redis: #d32f2f;        --redis-bg: #fdecec;
+    --ext: #475569;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; width: 2200px; height: 1720px; position: relative;
+    background: #f6f7fb; color: var(--ink);
+    font-family: "Segoe UI", "Leelawadee UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { position: absolute; left: 48px; top: 40px; margin: 0; font-size: 62px; font-weight: 800; letter-spacing: -.6px; }
+  .sub { position: absolute; left: 50px; top: 124px; font-size: 28px; color: var(--muted); }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+
+  /* ───── หน้าจอแชท ───── */
+  #phone {
+    position: absolute; left: 48px; top: 200px; width: 520px; height: 1470px;
+    border: 10px solid #1f2937; border-radius: 56px; background: #fff; overflow: hidden;
+  }
+  #phone .bar {
+    background: var(--bot); color: #fff; padding: 30px 28px 20px;
+  }
+  #phone .bar .t { font-size: 30px; font-weight: 800; }
+  #phone .bar .d { font-size: 21px; opacity: .85; margin-top: 2px; }
+  #phone .chat { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 86%; padding: 12px 18px; border-radius: 22px; font-size: 22px; line-height: 1.45; }
+  .msg.u { align-self: flex-end; background: var(--flutter); color: #fff; border-bottom-right-radius: 6px; }
+  .msg.b { align-self: flex-start; background: #eef1f5; border-bottom-left-radius: 6px; }
+  .msg.b.refuse { background: var(--check-bg); border: 2px solid #f0c99a; }
+  .msg.b i { color: var(--muted); }
+  .tags { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+  .tag {
+    font-family: Consolas, monospace; font-size: 17px; font-weight: 700; padding: 2px 10px;
+    border-radius: 8px; border: 2px solid var(--bot); color: var(--bot); background: #fff;
+  }
+  .tag.kb { border-color: var(--chroma); color: var(--chroma); }
+  .tag.live { border-color: var(--nest); color: var(--nest); }
+  .tag.flag { border-color: var(--check); color: var(--check); }
+  .tag.mem { border-color: var(--ext); color: var(--ext); }
+  #phone .input {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 20px 26px;
+    border-top: 2px solid #e5e7eb; background: #fafafa; display: flex; gap: 12px; align-items: center;
+  }
+  #phone .input .field { flex: 1; border: 2px solid #d1d5db; border-radius: 99px; padding: 10px 20px; font-size: 21px; color: #9ca3af; background: #fff; }
+  #phone .input .send { width: 50px; height: 50px; border-radius: 50%; background: var(--bot); }
+
+  /* ───── กล่องทั่วไป ───── */
+  .box { position: absolute; border-radius: 22px; border: 4px solid; padding: 20px 24px; }
+  .box h2 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.3px; }
+  .box .line { font-size: 23px; color: var(--muted); margin-top: 6px; }
+  .pill {
+    position: absolute; right: 22px; top: 22px; font-size: 20px; font-weight: 600;
+    border: 3px solid; border-radius: 99px; padding: 2px 16px; background: #fff;
+  }
+
+  /* ───── ภายใน Chatbot API ───── */
+  .step {
+    position: absolute; left: 940px; width: 700px; border: 3px solid var(--line); border-radius: 16px;
+    background: #fff; padding: 12px 18px 12px 74px;
+  }
+  .step .num {
+    position: absolute; left: 16px; top: 14px; width: 42px; height: 42px; border-radius: 50%;
+    color: #fff; font-size: 23px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  }
+  .step .n { font-size: 26px; font-weight: 800; }
+  .step .d { font-size: 21px; color: var(--muted); margin-top: 2px; }
+  .tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+  .tool { border: 2px solid; border-radius: 10px; padding: 4px 10px; font-family: Consolas, monospace; font-size: 19px; font-weight: 700; background: #fff; }
+  .tool span { font-family: "Segoe UI", "Leelawadee UI", sans-serif; font-weight: 400; color: var(--muted); font-size: 17px; margin-left: 6px; }
+
+  svg { position: absolute; inset: 0; width: 2200px; height: 1720px; pointer-events: none; }
+  .flow { font-size: 22px; font-weight: 700; }
+  .badge { font-size: 24px; font-weight: 800; fill: #fff; }
+</style>
+</head>
+<body>
+
+<h1>Poonsuk Resort — Chatbot Architecture</h1>
+<div class="sub">หน้าจอแชท → ทางเข้า → ขั้นตอนภายใน Chatbot API (RAG + Tool Calling + Answer Validation) → ระบบภายนอก</div>
+
+<!-- ═════════ หน้าจอแชท ═════════ -->
+<div id="phone">
+  <div class="bar">
+    <div class="t">พูนสุข รีสอร์ท · ผู้ช่วยแชท</div>
+    <div class="d">ตอบจากคลังความรู้และระบบจองเท่านั้น</div>
+  </div>
+  <div class="chat">
+    <div class="msg u">เช็คอินได้กี่โมงคะ</div>
+    <div class="msg b">เช็คอินได้ตั้งแต่ 14.00 น. ถึง 22.00 น. ค่ะ ถ้ามาถึงหลัง 22.00 น. กรุณาโทรแจ้งล่วงหน้าที่ 081-598-1199</div>
+    <div class="tags"><span class="tag kb">search_knowledge_base</span></div>
+
+    <div class="msg u">แล้วเช็คเอาท์ล่ะ</div>
+    <div class="msg b">เช็คเอาท์ก่อน 12.00 น. ของวันสุดท้ายที่เข้าพักค่ะ</div>
+    <div class="tags"><span class="tag mem">ใช้ประวัติแชท</span><span class="tag kb">search_knowledge_base</span></div>
+
+    <div class="msg u">เสาร์นี้มีห้องว่างไหม 2 คืน</div>
+    <div class="msg b"><i>ตอบชื่อห้องที่ว่าง ราคาต่อคืน และยอดรวม 2 คืน จากระบบจอง ณ ขณะนั้น</i><br>หากต้องการจอง สามารถจองได้ในแอปเลยค่ะ</div>
+    <div class="tags"><span class="tag live">search_available_rooms</span><span class="tag live">quote_price</span></div>
+
+    <div class="msg u">การจองของฉันจ่ายเงินแล้วหรือยัง</div>
+    <div class="msg b"><i>ตอบสถานะการชำระเงินของการจองที่เป็นของลูกค้าคนนี้เท่านั้น</i></div>
+    <div class="tags"><span class="tag live">get_my_bookings</span><span class="tag live">get_booking_payment</span><span class="tag mem">ต้องล็อกอิน (JWT)</span></div>
+
+    <div class="msg u">เช็คเอาท์ช้าได้ไหม เสียเพิ่มเท่าไหร่</div>
+    <div class="msg b refuse">ขออภัยค่ะ ไม่มีข้อมูลเรื่องนี้ในระบบ รบกวนสอบถามโดยตรงที่ 081-598-1199 นะคะ</div>
+    <div class="tags"><span class="tag kb">search_knowledge_base</span><span class="tag flag">answered = false</span></div>
+  </div>
+  <div class="input"><div class="field">พิมพ์คำถาม...</div><div class="send"></div></div>
+</div>
+
+<!-- ═════════ ทางเข้า ═════════ -->
+<div class="box" style="left:620px; top:200px; width:270px; height:430px; border-color:var(--nest); background:var(--nest-bg)">
+  <h2 style="color:var(--nest)">NestJS</h2>
+  <div class="line" style="color:var(--nest); font-weight:700">proxy ของแอป</div>
+  <div class="line mono" style="font-size:19px; margin-top:12px">POST /api/chatbot/<br>query</div>
+  <div class="line" style="margin-top:12px">JWT ไม่บังคับ</div>
+  <div class="line">≤ 10 ครั้ง/นาที/IP</div>
+  <div class="line">timeout 90 วินาที</div>
+  <div class="line">ส่งกลับแอป 3 ฟิลด์</div>
+</div>
+
+<div class="box" style="left:620px; top:680px; width:270px; height:330px; border-color:var(--bot); background:#fff; border-style:dashed">
+  <h2 style="color:var(--bot); font-size:30px">เรียกตรง</h2>
+  <div class="line" style="color:var(--bot); font-weight:700">same-origin</div>
+  <div class="line mono" style="font-size:21px; margin-top:12px">/demo</div>
+  <div class="line">วิดเจ็ตแชทมุมขวาล่าง</div>
+  <div class="line" style="margin-top:10px"><span class="mono" style="font-size:21px">/</span> หน้าทดสอบ</div>
+  <div class="line">แสดง tools · score · token</div>
+</div>
+
+<div class="box" style="left:620px; top:1060px; width:270px; height:300px; border-color:var(--redis); background:var(--redis-bg); border-style:dashed">
+  <h2 style="color:var(--redis); font-size:30px">ข้อผิดพลาด</h2>
+  <div class="line" style="margin-top:10px"><b style="color:var(--ink)">401</b> token หมดอายุ</div>
+  <div class="line">→ แอปขอใหม่แล้วส่งซ้ำ</div>
+  <div class="line"><b style="color:var(--ink)">429</b> ถามถี่เกินไป</div>
+  <div class="line"><b style="color:var(--ink)">503</b> บอทไม่พร้อม</div>
+  <div class="line">หรือเกิน 90 วินาที</div>
+</div>
+
+<!-- ═════════ Chatbot API ═════════ -->
+<div class="box" style="left:915px; top:200px; width:750px; height:1470px; border-color:var(--bot); background:var(--bot-bg)">
+  <h2 style="color:var(--bot); font-size:40px">Chatbot API</h2>
+  <span class="pill" style="color:var(--bot); border-color:var(--bot)">FastAPI · Docker :8000</span>
+  <div class="line mono" style="color:var(--bot); font-size:22px; margin-top:8px">POST /api/v1/chatbot/query · RAGPipeline.answer()</div>
+</div>
+
+<div class="step" style="top:320px; height:84px">
+  <div class="num" style="background:var(--bot)">1</div>
+  <div class="n" style="color:var(--bot)">รับคำขอและตรวจภาษา</div>
+  <div class="d">Pydantic ตรวจรูปแบบ · token จาก header · ภาษาตามข้อความ</div>
+</div>
+
+<div class="step" style="top:420px; height:84px">
+  <div class="num" style="background:var(--bot)">2</div>
+  <div class="n" style="color:var(--bot)">โหลดประวัติแชท</div>
+  <div class="d">10 ข้อความล่าสุดของ session · เก็บเฉพาะคำถามและคำตอบสุดท้าย</div>
+</div>
+
+<div class="step" style="top:520px; height:84px">
+  <div class="num" style="background:var(--bot)">3</div>
+  <div class="n" style="color:var(--bot)">ประกอบ System Prompt</div>
+  <div class="d">กติกาการตอบ · วันที่ไทย (UTC+7) · ปฏิทิน 14 วัน · ประโยคปฏิเสธ</div>
+</div>
+
+<!-- ลูปเครื่องมือ -->
+<div style="position:absolute; left:930px; top:630px; width:720px; height:515px; border:4px dashed var(--bot); border-radius:22px"></div>
+<div style="position:absolute; left:956px; top:614px; background:var(--bot); color:#fff; font-size:22px; font-weight:700; padding:3px 18px; border-radius:99px">Tool Calling Loop · ≤ 3 รอบ</div>
+
+<div class="step" style="top:658px; height:96px; left:950px; width:680px">
+  <div class="num" style="background:var(--ext)">4</div>
+  <div class="n" style="color:var(--ext)">LLMClient.generate(messages, tools)</div>
+  <div class="d">โมเดลเลือกเองว่าจะเรียกเครื่องมือใด หรือตอบเป็นข้อความ</div>
+</div>
+
+<div class="step" style="top:770px; height:358px; left:950px; width:680px">
+  <div class="num" style="background:var(--bot)">5</div>
+  <div class="n" style="color:var(--bot)">ToolExecutor · เครื่องมือ 7 รายการ</div>
+  <div class="d">รันจริง ส่งผล JSON กลับเข้า messages · แนบ JWT ให้เอง</div>
+  <div class="tools">
+    <div class="tool" style="border-color:var(--nest); color:var(--nest)">search_available_rooms</div>
+    <div class="tool" style="border-color:var(--nest); color:var(--nest)">quote_price</div>
+    <div class="tool" style="border-color:var(--chroma); color:var(--chroma)">search_knowledge_base</div>
+    <div class="tool" style="border-color:var(--nest); color:var(--nest)">get_payment_info</div>
+    <div class="tool" style="border-color:var(--nest); color:var(--nest)">list_restaurants</div>
+    <div class="tool" style="border-color:var(--nest); color:var(--nest)">get_my_bookings <span>JWT</span></div>
+    <div class="tool" style="border-color:var(--nest); color:var(--nest); grid-column: span 2">get_booking_payment <span>JWT · เฉพาะการจองของลูกค้าคนนั้น</span></div>
+  </div>
+  <div class="d" style="margin-top:10px">สีน้ำเงิน = ข้อมูลสดจากระบบจอง · สีเขียวเข้ม = คลังความรู้</div>
+</div>
+
+<div class="step" style="top:1170px; height:180px; border-color:#f0c99a; background:var(--check-bg)">
+  <div class="num" style="background:var(--check)">6</div>
+  <div class="n" style="color:var(--check)">Answer Validation · ให้แก้ใหม่ ≤ 4 ครั้ง</div>
+  <div class="d">System Prompt หลุด · ทำตามคำสั่งแทรก (Prompt Injection)</div>
+  <div class="d">ภาษาอื่นปะปน · ชื่อฟิลด์ภายใน · ข้อความแม่แบบที่ไม่ได้แทนค่า</div>
+  <div class="d">ชื่อห้อง / ลิงก์ / ค่าเตียงเสริมที่ไม่ตรงกับผลเครื่องมือ</div>
+  <div class="d">ตอบโดยไม่เรียกเครื่องมือ · ปฏิเสธทั้งที่มีข้อมูล</div>
+</div>
+
+<div class="step" style="top:1366px; height:84px">
+  <div class="num" style="background:var(--bot)">7</div>
+  <div class="n" style="color:var(--bot)">ปรับคำตอบก่อนส่ง</div>
+  <div class="d">ตัดลิงก์ที่แต่งขึ้น · ให้จองต่อในแอป · คำนวณ answered และ confidence</div>
+</div>
+
+<div class="step" style="top:1466px; height:84px">
+  <div class="num" style="background:var(--bot)">8</div>
+  <div class="n" style="color:var(--bot)">บันทึกประวัติ + ส่ง ChatResponse</div>
+  <div class="d">answer · answered · sources · tools_used · token_usage</div>
+</div>
+
+<div class="line" style="position:absolute; left:940px; top:1578px; width:700px; font-size:20px; color:var(--muted)">
+  Endpoint อื่น: <span class="mono">GET /chatbot/health</span> · <span class="mono">/knowledge</span> (เพิ่ม/แก้/ลบความรู้)
+</div>
+
+<!-- ═════════ ระบบภายนอก ═════════ -->
+<div class="box" style="left:1720px; top:400px; width:432px; height:150px; border-color:var(--ext); background:#fff">
+  <h2 style="color:var(--ext); font-size:30px">SQLite</h2>
+  <span class="pill" style="color:var(--ext); border-color:var(--ext)">ประวัติแชท</span>
+  <div class="line mono" style="font-size:20px; margin-top:8px">data/chat_history.db</div>
+  <div class="line">ลบอัตโนมัติเมื่อเกิน 7 วัน</div>
+</div>
+
+<div class="box" style="left:1720px; top:620px; width:432px; height:170px; border-color:var(--ext); background:#fff; border-style:dashed">
+  <h2 style="color:var(--ext); font-size:30px">Typhoon 2.5</h2>
+  <span class="pill" style="color:var(--ext); border-color:var(--ext)">external</span>
+  <div class="line mono" style="font-size:19px; margin-top:8px">typhoon-v2.5-30b-a3b-instruct</div>
+  <div class="line">สลับเป็น Gemini ได้ที่ .env</div>
+</div>
+
+<div class="box" style="left:1720px; top:810px; width:432px; height:225px; border-color:var(--nest); background:var(--nest-bg)">
+  <h2 style="color:var(--nest); font-size:30px">Booking API</h2>
+  <span class="pill" style="color:var(--nest); border-color:var(--nest)">ข้อมูลสด</span>
+  <div class="line" style="color:var(--nest); font-weight:700; margin-top:4px">NestJS + PostgreSQL</div>
+  <div class="line" style="margin-top:6px">ห้องว่าง · ราคา · ร้านอาหาร</div>
+  <div class="line">การจองและการชำระเงินของลูกค้า</div>
+  <div class="line">GET อย่างเดียว · X-Internal-Key</div>
+</div>
+
+<div class="box" style="left:1720px; top:1050px; width:432px; height:190px; border-color:var(--chroma); background:var(--chroma-bg)">
+  <h2 style="color:var(--chroma); font-size:30px">ChromaDB</h2>
+  <span class="pill" style="color:var(--chroma); border-color:var(--chroma)">คลังความรู้</span>
+  <div class="line" style="margin-top:10px">นโยบาย · FAQ · การเดินทาง</div>
+  <div class="line">e5-base 768 มิติ · Cosine · Top-5</div>
+  <div class="line">กรองตามภาษา th / en</div>
+</div>
+
+<div class="box" style="left:1720px; top:1300px; width:432px; height:150px; border-color:var(--ext); background:transparent; border-style:dashed">
+  <h2 style="color:var(--ext); font-size:28px">Indexing Pipeline</h2>
+  <div class="line">offline · markdown 7 หมวด × 2 ภาษา</div>
+  <div class="line">→ chunk 450/90 → embedding</div>
+</div>
+
+<!-- ═════════ เส้นเชื่อม ═════════ -->
+<svg viewBox="0 0 2200 1720">
+  <defs>
+    <marker id="a-flutter" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#c2185b"/></marker>
+    <marker id="a-nest" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#3730c4"/></marker>
+    <marker id="a-nest-s" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="4" refY="11" orient="auto"><path d="M22,0 L0,11 L22,22 z" fill="#3730c4"/></marker>
+    <marker id="a-bot" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#1f7a4d"/></marker>
+    <marker id="a-chroma" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#0f766e"/></marker>
+    <marker id="a-chroma-s" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="4" refY="11" orient="auto"><path d="M22,0 L0,11 L22,22 z" fill="#0f766e"/></marker>
+    <marker id="a-ext" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#475569"/></marker>
+    <marker id="a-ext-s" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="4" refY="11" orient="auto"><path d="M22,0 L0,11 L22,22 z" fill="#475569"/></marker>
+    <marker id="a-check" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#b5651d"/></marker>
+  </defs>
+
+  <!-- หน้าจอ → NestJS (แอป Flutter) -->
+  <path d="M568,330 L610,330" stroke="#c2185b" stroke-width="6" fill="none" marker-end="url(#a-flutter)"/>
+  <!-- หน้าจอ → เรียกตรง (/demo) -->
+  <path d="M568,820 L610,820" stroke="#1f7a4d" stroke-width="5" stroke-dasharray="12 8" fill="none" marker-end="url(#a-bot)"/>
+  <!-- NestJS → Chatbot API -->
+  <path d="M890,362 L930,362" stroke="#3730c4" stroke-width="6" fill="none" marker-end="url(#a-nest)"/>
+  <!-- เรียกตรง → Chatbot API -->
+  <path d="M890,820 L905,820 L905,362 L930,362" stroke="#1f7a4d" stroke-width="5" stroke-dasharray="12 8" fill="none"/>
+
+  <!-- ลำดับขั้นภายใน -->
+  <!-- ผลเครื่องมือกลับไปที่ LLM (ด้านซ้ายของลูป) -->
+  <path d="M950,1080 L942,1080 L942,706 L948,706" stroke="#1f7a4d" stroke-width="4" fill="none" marker-end="url(#a-bot)"/>
+  <!-- คำตอบสุดท้ายออกจากลูป → Validation -->
+  <!-- ไม่ผ่าน → กลับไป LLM (ด้านขวาของลูป) -->
+  <path d="M1640,1260 L1655,1260 L1655,706 L1640,706" stroke="#b5651d" stroke-width="4" stroke-dasharray="10 7" fill="none" marker-end="url(#a-check)"/>
+
+  <!-- ขั้น 2 / 8 ↔ SQLite -->
+  <path d="M1640,462 L1710,462" stroke="#475569" stroke-width="5" fill="none" marker-end="url(#a-ext)" marker-start="url(#a-ext-s)"/>
+  <!-- ขั้น 4 ↔ Typhoon -->
+  <path d="M1630,690 L1710,690" stroke="#475569" stroke-width="6" fill="none" marker-end="url(#a-ext)" marker-start="url(#a-ext-s)"/>
+  <!-- ขั้น 5 ↔ Booking API -->
+  <path d="M1630,900 L1710,900" stroke="#3730c4" stroke-width="6" fill="none" marker-end="url(#a-nest)" marker-start="url(#a-nest-s)"/>
+  <!-- ขั้น 5 ↔ ChromaDB -->
+  <path d="M1630,1100 L1710,1100" stroke="#0f766e" stroke-width="6" fill="none" marker-end="url(#a-chroma)" marker-start="url(#a-chroma-s)"/>
+  <!-- Indexing → ChromaDB -->
+  <path d="M1936,1300 L1936,1250" stroke="#475569" stroke-width="5" fill="none" marker-end="url(#a-ext)"/>
+</svg>
+
+</body>
+</html>

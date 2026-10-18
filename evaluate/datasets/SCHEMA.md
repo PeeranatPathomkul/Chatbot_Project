@@ -37,6 +37,7 @@ validator ตรวจว่า id ไม่ซ้ำ, จำนวนข้อ�
 | `absent_terms` | ใช้กับคำถามนอกคลัง: คำที่ต้องไม่ปรากฏในคลังความรู้เลย (validator ยืนยันให้) |
 | `paraphrase_group` | กลุ่มคำถามความหมายเดียวกัน |
 | `consistency_subset` | `true` = อยู่ในชุดย่อย 20 ข้อสำหรับ run-to-run consistency |
+| `former_id` | (kb_filled.yaml) id เดิมตอนที่หัวข้อนั้นยังเป็น `<<รอเติม>>` ใช้เทียบกับผลรอบก่อนเติมข้อมูล |
 
 ## การเทียบ key fact
 

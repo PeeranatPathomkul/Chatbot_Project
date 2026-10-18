@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>Poonsuk Resort — Chatbot Request Flow</title>
+<style>
+  /*
+    ลำดับการทำงานเมื่อลูกค้าถามหนึ่งคำถาม ใช้สไตล์เดียวกับ architecture.html
+    เรนเดอร์เป็น PNG ด้วย headless Chrome (ขนาด 2200x1740, scale 2):
+      chrome --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+        --window-size=2200,1740 --screenshot=docs/chat-flow.png file:///.../docs/chat-flow.html
+    เส้นทางเดินแบบงู: แถวบนซ้าย→ขวา, ลูปเครื่องมือขวา→ซ้าย, ตรวจคำตอบขวา→ซ้าย, ส่งกลับซ้าย→ขวา
+  */
+  :root {
+    --ink: #111827;
+    --muted: #4b5563;
+    --line: #cbd5e1;
+
+    --flutter: #c2185b;      --flutter-bg: #fdeef4;
+    --nest: #3730c4;         --nest-bg: #eef0fe;
+    --redis: #d32f2f;        --redis-bg: #fdecec;
+    --bot: #1f7a4d;          --bot-bg: #edf7f1;
+    --chroma: #0f766e;       --chroma-bg: #eaf6f5;
+    --check: #b5651d;        --check-bg: #fff8ef;
+    --ext: #475569;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; width: 2200px; height: 1740px; position: relative;
+    background: #f6f7fb; color: var(--ink);
+    font-family: "Segoe UI", "Leelawadee UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1 { position: absolute; left: 48px; top: 40px; margin: 0; font-size: 62px; font-weight: 800; letter-spacing: -.6px; }
+  .sub { position: absolute; left: 50px; top: 124px; font-size: 28px; color: var(--muted); }
+
+  .box { position: absolute; border-radius: 22px; border: 4px solid; padding: 22px 28px; }
+  .box h2 { margin: 0; font-size: 38px; font-weight: 800; letter-spacing: -.3px; }
+  .box .line { font-size: 25px; color: var(--muted); margin-top: 6px; }
+  .box .line b { color: var(--ink); font-weight: 700; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .box .code { font-family: Consolas, "Courier New", monospace; font-size: 24px; margin-top: 12px; }
+  .pill {
+    position: absolute; right: 24px; top: 26px; font-size: 21px; font-weight: 600;
+    border: 3px solid; border-radius: 99px; padding: 3px 18px; background: #fff;
+  }
+  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+  .chip {
+    border: 3px solid; border-radius: 12px; background: #fff;
+    padding: 6px 14px; font-size: 23px; font-weight: 600; white-space: nowrap;
+  }
+
+  .band {
+    position: absolute; border: 4px dashed; border-radius: 28px;
+  }
+  .band .tag {
+    position: absolute; left: 34px; top: -26px; color: #fff;
+    font-size: 29px; font-weight: 700; padding: 6px 26px; border-radius: 99px;
+  }
+  .band .note {
+    position: absolute; right: 34px; top: -24px; background: #f6f7fb;
+    font-size: 26px; font-weight: 700; padding: 2px 20px;
+  }
+
+  svg { position: absolute; inset: 0; width: 2200px; height: 1740px; pointer-events: none; }
+  .flow { font-size: 24px; font-weight: 700; }
+  .badge { font-size: 26px; font-weight: 800; fill: #fff; }
+</style>
+</head>
+<body>
+
+<h1>Poonsuk Resort — Chatbot Request Flow</h1>
+<div class="sub">ลำดับการทำงานเมื่อลูกค้าถามหนึ่งคำถาม: แอป → NestJS → FastAPI → LLM + เครื่องมือ → ตรวจสอบคำตอบ → ส่งกลับแอป</div>
+
+<!-- ───────── แถว A: รับคำถาม (ซ้าย → ขวา) ───────── -->
+<div class="box" style="left:48px; top:210px; width:380px; height:290px; border-color:var(--flutter); background:var(--flutter-bg)">
+  <h2 style="color:var(--flutter)">Flutter App</h2>
+  <div class="line">ลูกค้าพิมพ์คำถามในหน้าแชท</div>
+  <div class="line">ล็อกอินหรือไม่ก็ได้</div>
+  <div class="code" style="color:var(--flutter)">{ message,<br>&nbsp;&nbsp;sessionId, language }</div>
+</div>
+
+<div class="box" style="left:520px; top:210px; width:500px; height:290px; border-color:var(--nest); background:var(--nest-bg)">
+  <h2 style="color:var(--nest)">NestJS API</h2>
+  <span class="pill" style="color:var(--nest); border-color:var(--nest)">proxy</span>
+  <div class="line mono" style="color:var(--nest); font-size:23px">POST /api/chatbot/query</div>
+  <div class="chips">
+    <span class="chip" style="border-color:var(--nest); color:var(--nest)">JWT ไม่บังคับ</span>
+    <span class="chip" style="border-color:var(--nest); color:var(--nest)">≤ 10 ครั้ง/นาที/IP</span>
+    <span class="chip" style="border-color:var(--nest); color:var(--nest)">timeout 90 วิ</span>
+  </div>
+  <div class="line" style="margin-top:12px">ส่ง token ต่อเฉพาะผู้ใช้ที่เป็นลูกค้า</div>
+</div>
+
+<div class="box" style="left:1110px; top:210px; width:500px; height:290px; border-color:var(--bot); background:var(--bot-bg)">
+  <h2 style="color:var(--bot)">Chatbot API</h2>
+  <span class="pill" style="color:var(--bot); border-color:var(--bot)">FastAPI</span>
+  <div class="line mono" style="color:var(--bot); font-size:23px">POST /api/v1/chatbot/query</div>
+  <div class="line" style="margin-top:12px">ตรวจภาษาจากข้อความจริง (th / en)</div>
+  <div class="line">โหลดประวัติ 10 ข้อความล่าสุด</div>
+  <div class="line">จาก SQLite ตาม session_id</div>
+</div>
+
+<div class="box" style="left:1700px; top:210px; width:452px; height:290px; border-color:var(--bot); background:#fff">
+  <h2 style="color:var(--bot)">System Prompt</h2>
+  <div class="line" style="margin-top:12px">กติกาการตอบ · ห้ามใช้ความรู้ทั่วไป</div>
+  <div class="line">วันที่วันนี้ + ปฏิทิน 14 วัน</div>
+  <div class="line">ประโยคปฏิเสธมาตรฐาน</div>
+  <div class="line">+ ประวัติ + คำถามใหม่</div>
+</div>
+
+<!-- ───────── แถว B: ลูปเรียกเครื่องมือ (ขวา → ซ้าย) ───────── -->
+<div class="band" style="left:32px; top:560px; width:2136px; height:450px; border-color:var(--bot); background:rgba(31,122,77,.05)">
+  <div class="tag" style="background:var(--bot)">Tool Calling Loop</div>
+  <div class="note" style="color:var(--bot); right:300px">วนซ้ำได้ไม่เกิน 3 รอบต่อคำถาม</div>
+</div>
+
+<div class="box" style="left:80px; top:610px; width:640px; height:180px; border-color:var(--nest); background:var(--nest-bg)">
+  <h2 style="color:var(--nest); font-size:34px">Booking API (NestJS)</h2>
+  <span class="pill" style="color:var(--nest); border-color:var(--nest); top:22px">ข้อมูลสด</span>
+  <div class="line mono" style="font-size:22px; margin-top:10px">GET /rooms · /payment/info · /restaurants</div>
+  <div class="line mono" style="font-size:22px">GET /bookings/me · /bookings/:id/payment</div>
+</div>
+
+<div class="box" style="left:80px; top:810px; width:640px; height:170px; border-color:var(--chroma); background:var(--chroma-bg)">
+  <h2 style="color:var(--chroma); font-size:34px">ChromaDB</h2>
+  <span class="pill" style="color:var(--chroma); border-color:var(--chroma); top:22px">คลังความรู้</span>
+  <div class="line" style="margin-top:10px">นโยบาย · สิ่งอำนวยความสะดวก · การเดินทาง · FAQ</div>
+  <div class="line">prefix "query:" · Cosine · Top-5 · กรองตามภาษา</div>
+</div>
+
+<div class="box" style="left:900px; top:640px; width:560px; height:310px; border-color:var(--bot); background:#fff">
+  <h2 style="color:var(--bot)">ToolExecutor</h2>
+  <div class="line" style="margin-top:12px">รันเครื่องมือจริงตามที่โมเดลขอ</div>
+  <div class="line">แนบ JWT ลูกค้าจาก header ให้เอง</div>
+  <div class="line" style="color:var(--bot); font-weight:700">โมเดลกรอก token เองไม่ได้</div>
+  <div class="line">คำนวณจำนวนคืนและยอดรวมในโค้ด</div>
+  <div class="line">อ่านอย่างเดียว · ไม่สร้าง/ยกเลิกการจอง</div>
+</div>
+
+<div class="box" style="left:1640px; top:640px; width:512px; height:250px; border-color:var(--ext); background:#fff; border-style:dashed">
+  <h2 style="color:var(--ext)">Typhoon 2.5 LLM</h2>
+  <span class="pill" style="color:var(--ext); border-color:var(--ext)">external</span>
+  <div class="line" style="margin-top:12px">รับ messages + เครื่องมือ 7 รายการ</div>
+  <div class="line">(JSON Schema)</div>
+  <div class="line"><b>เลือกเอง</b>ว่าจะเรียกเครื่องมือใด</div>
+  <div class="line">หรือตอบเป็นข้อความเลย</div>
+</div>
+
+<!-- ───────── แถว C: ตรวจคำตอบและบันทึก (ขวา → ซ้าย) ───────── -->
+<div class="box" style="left:1640px; top:1090px; width:512px; height:290px; border-color:var(--check); background:var(--check-bg)">
+  <h2 style="color:var(--check)">Answer Validation</h2>
+  <div class="line" style="margin-top:12px">ภาษาอื่นปะปน · ชื่อฟิลด์ภายในระบบ</div>
+  <div class="line">ชื่อห้อง / ลิงก์ที่ไม่มีในผลเครื่องมือ</div>
+  <div class="line">ค่าเตียงเสริมไม่ตรงกับคลังความรู้</div>
+  <div class="line">ตอบหรือปฏิเสธโดยไม่ค้นข้อมูล</div>
+  <div class="line">ข้อความแม่แบบที่ไม่ได้แทนค่า</div>
+</div>
+
+<div class="box" style="left:900px; top:1090px; width:560px; height:290px; border-color:var(--bot); background:var(--bot-bg)">
+  <h2 style="color:var(--bot)">บันทึกและสรุปผล</h2>
+  <div class="line" style="margin-top:12px">ตัดลิงก์ที่ไม่ได้มาจากเครื่องมือ</div>
+  <div class="line">ให้จองต่อในแอป (บอทจองให้ไม่ได้)</div>
+  <div class="line">บันทึกคำถาม + คำตอบลง SQLite</div>
+  <div class="line">(ลบอัตโนมัติเมื่อเกิน 7 วัน)</div>
+  <div class="line">คำนวณ answered · confidence</div>
+</div>
+
+<div class="box" style="left:80px; top:1090px; width:640px; height:290px; border-color:var(--bot); background:#fff">
+  <h2 style="color:var(--bot)">Response (JSON)</h2>
+  <span class="pill" style="color:var(--bot); border-color:var(--bot)">200 OK</span>
+  <div class="code" style="color:var(--bot); line-height:1.5; margin-top:16px">
+    session_id · answer · answered<br>
+    sources · confidence<br>
+    retrieval_score · tools_used<br>
+    token_usage
+  </div>
+</div>
+
+<!-- ───────── แถว D: ส่งกลับแอป (ซ้าย → ขวา) ───────── -->
+<div class="box" style="left:80px; top:1470px; width:640px; height:220px; border-color:var(--nest); background:var(--nest-bg)">
+  <h2 style="color:var(--nest)">NestJS ส่งกลับแอป</h2>
+  <div class="code" style="color:var(--nest)">{ sessionId, answer, answered }</div>
+  <div class="line" style="margin-top:12px">ฟิลด์อื่นใช้ตรวจสอบระบบเท่านั้น</div>
+</div>
+
+<div class="box" style="left:900px; top:1470px; width:560px; height:220px; border-color:var(--flutter); background:var(--flutter-bg)">
+  <h2 style="color:var(--flutter)">แสดงผลบนแอป</h2>
+  <div class="line" style="margin-top:12px">แสดงคำตอบบนหน้าจอแชท</div>
+  <div class="line"><span class="mono">answered = false</span></div>
+  <div class="line">→ แนะนำให้ติดต่อรีสอร์ทโดยตรง</div>
+</div>
+
+<div class="box" style="left:1640px; top:1470px; width:512px; height:220px; border-color:var(--redis); background:var(--redis-bg); border-style:dashed">
+  <h2 style="color:var(--redis)">กรณีผิดพลาด</h2>
+  <div class="line" style="margin-top:10px"><b>401</b> token หมดอายุ → ขอใหม่แล้วส่งซ้ำ</div>
+  <div class="line"><b>429</b> ส่งคำขอเกิน 10 ครั้ง/นาที</div>
+  <div class="line"><b>503</b> แชทบอทไม่พร้อม / เกิน 90 วินาที</div>
+</div>
+
+<!-- ───────── เส้นเชื่อม ───────── -->
+<svg viewBox="0 0 2200 1740">
+  <defs>
+    <marker id="a-flutter" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#c2185b"/></marker>
+    <marker id="a-nest" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#3730c4"/></marker>
+    <marker id="a-nest-s" markerWidth="9" markerHeight="9" refX="2" refY="4.5" orient="auto"><path d="M9,0 L0,4.5 L9,9 z" fill="#3730c4"/></marker>
+    <marker id="a-bot" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1f7a4d"/></marker>
+    <marker id="a-chroma" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#0f766e"/></marker>
+    <marker id="a-chroma-s" markerWidth="9" markerHeight="9" refX="2" refY="4.5" orient="auto"><path d="M9,0 L0,4.5 L9,9 z" fill="#0f766e"/></marker>
+    <marker id="a-ext" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#475569"/></marker>
+    <marker id="a-check" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#b5651d"/></marker>
+  </defs>
+
+  <!-- 1 แอป → NestJS -->
+  <path d="M428,340 L510,340" stroke="#c2185b" stroke-width="6" fill="none" marker-end="url(#a-flutter)"/>
+  <text x="474" y="306" text-anchor="middle" class="flow" fill="#c2185b">HTTPS</text>
+  <circle cx="474" cy="392" r="24" fill="#c2185b"/><text x="474" y="401" text-anchor="middle" class="badge">1</text>
+
+  <!-- 2 NestJS → FastAPI -->
+  <path d="M1020,340 L1100,340" stroke="#3730c4" stroke-width="6" fill="none" marker-end="url(#a-nest)"/>
+  <text x="1065" y="306" text-anchor="middle" class="flow" fill="#3730c4">HTTP</text>
+  <circle cx="1065" cy="392" r="24" fill="#3730c4"/><text x="1065" y="401" text-anchor="middle" class="badge">2</text>
+
+  <!-- 3 FastAPI → System Prompt -->
+  <path d="M1610,340 L1690,340" stroke="#1f7a4d" stroke-width="6" fill="none" marker-end="url(#a-bot)"/>
+  <circle cx="1655" cy="392" r="24" fill="#1f7a4d"/><text x="1655" y="401" text-anchor="middle" class="badge">3</text>
+
+  <!-- 4 System Prompt → LLM -->
+  <path d="M1926,500 L1926,630" stroke="#1f7a4d" stroke-width="6" fill="none" marker-end="url(#a-bot)"/>
+    <text x="1954" y="604" class="flow" fill="#1f7a4d">messages</text>
+  <circle cx="1926" cy="530" r="24" fill="#1f7a4d"/><text x="1926" y="539" text-anchor="middle" class="badge">4</text>
+
+  <!-- 5 LLM → ToolExecutor : tool_calls -->
+  <path d="M1640,700 L1470,700" stroke="#475569" stroke-width="6" fill="none" marker-end="url(#a-ext)"/>
+  <text x="1550" y="680" text-anchor="middle" class="flow" fill="#475569">tool_calls</text>
+  <circle cx="1550" cy="736" r="24" fill="#475569"/><text x="1550" y="745" text-anchor="middle" class="badge">5</text>
+
+  <!-- 6 ToolExecutor ↔ Booking API / ChromaDB -->
+  <path d="M900,700 L730,700" stroke="#3730c4" stroke-width="6" fill="none" marker-end="url(#a-nest)" marker-start="url(#a-nest-s)"/>
+  <text x="815" y="668" text-anchor="middle" class="flow" fill="#3730c4" font-size="22">REST GET</text>
+  <path d="M900,895 L730,895" stroke="#0f766e" stroke-width="6" fill="none" marker-end="url(#a-chroma)" marker-start="url(#a-chroma-s)"/>
+  <text x="815" y="863" text-anchor="middle" class="flow" fill="#0f766e" font-size="22">vector search</text>
+  <circle cx="815" cy="797" r="24" fill="#1f7a4d"/><text x="815" y="806" text-anchor="middle" class="badge">6</text>
+
+  <!-- 7 ToolExecutor → LLM : ผลลัพธ์ -->
+  <path d="M1460,840 L1630,840" stroke="#1f7a4d" stroke-width="6" fill="none" marker-end="url(#a-bot)"/>
+  <text x="1550" y="882" text-anchor="middle" class="flow" fill="#1f7a4d" font-size="22">ผลลัพธ์</text>
+  <text x="1550" y="908" text-anchor="middle" class="flow" fill="#1f7a4d" font-size="22">(JSON)</text>
+  <circle cx="1550" cy="804" r="24" fill="#1f7a4d"/><text x="1550" y="813" text-anchor="middle" class="badge">7</text>
+
+  <!-- 8 LLM → Answer Validation : คำตอบสุดท้าย -->
+  <path d="M1830,890 L1830,1080" stroke="#475569" stroke-width="6" fill="none" marker-end="url(#a-ext)"/>
+  <rect x="1500" y="1024" width="312" height="60" fill="#f6f7fb"/>
+  <text x="1806" y="1048" text-anchor="end" class="flow" fill="#475569" font-size="22">ไม่มี tool_calls</text>
+  <text x="1806" y="1076" text-anchor="end" class="flow" fill="#475569" font-size="22">= คำตอบสุดท้าย</text>
+  <circle cx="1830" cy="960" r="24" fill="#475569"/><text x="1830" y="969" text-anchor="middle" class="badge">8</text>
+
+  <!-- ไม่ผ่าน: Validation → LLM -->
+  <path d="M2060,1090 L2060,900" stroke="#b5651d" stroke-width="5" stroke-dasharray="14 10" fill="none" marker-end="url(#a-check)"/>
+  <rect x="1878" y="1020" width="168" height="62" fill="#f6f7fb"/>
+  <text x="2044" y="1044" text-anchor="end" class="flow" fill="#b5651d" font-size="22">ไม่ผ่าน → แก้ใหม่</text>
+  <text x="2044" y="1072" text-anchor="end" class="flow" fill="#b5651d" font-size="22">≤ 4 ครั้ง</text>
+
+  <!-- 9 Validation → บันทึก : ผ่าน -->
+  <path d="M1640,1235 L1470,1235" stroke="#b5651d" stroke-width="6" fill="none" marker-end="url(#a-check)"/>
+  <text x="1550" y="1215" text-anchor="middle" class="flow" fill="#b5651d">ผ่าน</text>
+  <circle cx="1550" cy="1272" r="24" fill="#b5651d"/><text x="1550" y="1281" text-anchor="middle" class="badge">9</text>
+
+  <!-- 10 บันทึก → Response -->
+  <path d="M900,1235 L730,1235" stroke="#1f7a4d" stroke-width="6" fill="none" marker-end="url(#a-bot)"/>
+  <circle cx="815" cy="1272" r="24" fill="#1f7a4d"/><text x="815" y="1281" text-anchor="middle" class="badge">10</text>
+
+  <!-- 11 Response → NestJS -->
+  <path d="M400,1380 L400,1460" stroke="#3730c4" stroke-width="6" fill="none" marker-end="url(#a-nest)"/>
+  <circle cx="452" cy="1420" r="24" fill="#3730c4"/><text x="452" y="1429" text-anchor="middle" class="badge">11</text>
+
+  <!-- 12 NestJS → แอป -->
+  <path d="M720,1580 L890,1580" stroke="#c2185b" stroke-width="6" fill="none" marker-end="url(#a-flutter)"/>
+  <circle cx="805" cy="1617" r="24" fill="#c2185b"/><text x="805" y="1626" text-anchor="middle" class="badge">12</text>
+</svg>
+
+</body>
+</html>
