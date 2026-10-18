@@ -49,7 +49,7 @@ The resort charges per room, not per person, so there is no separate child polic
 Children stay at no additional cost as long as the total number of guests stays within
 the room's capacity. If you need an additional bed, the 200 THB per night extra bed fee applies,
 paid at the resort on the day of check-in.
-Baby cot: <<TODO: whether a baby cot can be borrowed>>
+Baby cot: the resort has no baby cots to lend; please bring your own.
 
 ## Not Provided in the Rooms
 Breakfast is not provided — the rate covers the room only.

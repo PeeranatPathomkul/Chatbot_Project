@@ -23,8 +23,8 @@ You can reach the resort by
 Phone : 081-598-1199
 Facebook : Poonsuk Resort Sadao
 
-Email and website: <<TODO: whether there is a booking email or website>>
-Front desk hours: <<TODO: front desk operating hours, e.g. 08:00-20:00>>
+Email and website: the resort has no booking email or website; contact us on Facebook: Poonsuk Resort Sadao.
+Front desk hours: 08:00-22:00; outside these hours call 081-598-1199.
 
 ## Unsupported Channels
 The resort has no LINE Official account
@@ -34,11 +34,11 @@ The main booking channel is the resort's app.
 Call 081-598-1199 or message Facebook: Poonsuk Resort Sadao for enquiries and extra bed requests.
 Guests pay the full room charge in the app in a single payment with a PromptPay QR code, then upload
 the slip in the app within the time limit shown in the app. The resort accepts bank transfer only —
-no cash and no credit cards.
-Booking via travel apps: <<TODO: whether the resort is listed on Agoda / Booking.com / Airbnb>>
+no cash and no credit cards for the room charge. The extra bed fee, paid at the front desk, can be paid in cash or by transfer.
+Booking via travel apps: the resort is not listed on Agoda, Booking.com or Airbnb; book through the resort's app.
 
 ## Languages Spoken
-Our staff speak: <<TODO: languages spoken by staff, e.g. Thai, English, Malay>>
+Our staff speak: Thai only.
 
 ## Policy Summary
 Check-in from 2:00 PM until 10:00 PM / check-out by 12:00 noon.

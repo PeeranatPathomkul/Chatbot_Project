@@ -54,12 +54,12 @@ Q: Which PromptPay number do I transfer to?
 A: The PromptPay number and QR code for the transfer are shown in the app at the payment step. Please transfer to what the app shows.
 
 Q: Can I pay in cash or by credit card?
-A: No. The resort accepts bank transfer only — no cash and no credit cards.
+A: Not for the room charge — it is paid by bank transfer in the app only, with no cash and no credit cards. The extra bed fee, paid at the resort's front desk, can be paid in cash or by transfer.
 
 Q: Can I get a refund if I cancel?
 A: You can cancel a booking yourself in the app, but only before the check-in date. If you have already paid, the system records a refund automatically and staff transfer the money back.
-Full refund: <<TODO: whether the refund is the full amount>>
-Refund timing: <<TODO: how many days the refund takes>>
+Full refund: cancelling before the check-in date gives a full refund; from the check-in date onwards there is no refund.
+Refund timing: staff transfer the refund within 1 hour of cancellation.
 
 Q: What is in the room?
 A: In-room amenities differ from room to room. You can see each room's amenities in the app, or ask the chatbot together with your stay dates.

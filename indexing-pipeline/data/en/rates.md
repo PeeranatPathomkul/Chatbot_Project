@@ -14,7 +14,7 @@ The rate is the same every day — weekdays and weekends alike, with no weekend 
 The rate is charged per room, not per person.
 
 The rate does not include breakfast, as the resort does not serve breakfast.
-VAT: <<TODO: whether the room rate already includes VAT>>
+VAT: the room rate already includes VAT.
 
 ## Extra Charges
 Extra bed: 200 THB per bed per night, at most one extra bed per room.
@@ -23,7 +23,7 @@ The extra bed fee is not paid in the app — it is paid at the resort on the day
 The amount paid in the app is therefore the room charge only and does not include extra beds.
 How to request an extra bed: book in the app for the number of guests the room allows,
 then call the owner on 081-598-1199.
-Other charges beyond those listed: <<TODO: any other charges, such as a late check-out fee after 12:00 noon>>
+Other charges beyond those listed: there are no other charges besides the room rate and the extra bed fee.
 
 ## Payment
 Guests pay the full room charge in the app in a single payment, with no part-payment and no balance due at check-in.
@@ -36,9 +36,9 @@ If the slip is not uploaded within the time limit shown in the app, the booking 
 automatically and you can book again.
 The PromptPay number for the transfer is shown in the app at the payment step.
 
-The resort accepts bank transfer only — no cash and no credit cards.
-How the extra bed fee is paid at the resort: <<TODO: whether the extra bed fee is paid in cash or by transfer>>
-Receipts and tax invoices: <<TODO: whether these can be issued>>
+The room charge is paid by bank transfer only — no cash and no credit cards. The extra bed fee, paid at the resort's front desk, can be paid in cash or by transfer.
+How the extra bed fee is paid at the resort: pay the staff at the front desk, in cash or by transfer.
+Receipts and tax invoices: the resort can issue receipts and tax invoices.
 
 ## Not Included in the Rate
 The room rate covers the room only. It does not include breakfast or an extra bed.

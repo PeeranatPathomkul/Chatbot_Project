@@ -11,7 +11,7 @@ so its facilities centre on the rooms themselves.
 
 ## Wi-Fi and Internet
 Free Wi-Fi is available at no extra charge.
-Wi-Fi password: <<TODO: where guests get the Wi-Fi password, or whether it is given at check-in>>
+Wi-Fi password: the Wi-Fi password is in your room.
 
 ## Parking
 Free parking is available for guests — convenient and secure, right next to the rooms.
@@ -22,8 +22,8 @@ There is space for 4 cars, and the car park is covered by CCTV.
 The resort does not serve breakfast, has no restaurant, and offers no room service.
 Guests can eat at the shops and markets nearby,
 which are about 5 minutes away by car.
-Bringing outside food into the room: <<TODO: whether this is permitted>>
-Drinking water: <<TODO: whether free drinking water is provided in the room>>
+Bringing outside food into the room: you may bring outside food into your room.
+Drinking water: free drinking water is provided in the room.
 
 ## In-Room Amenities
 In-room amenities differ from room to room. You can see each room's amenities in the app,
@@ -34,10 +34,10 @@ The grounds are shaded, quiet and private, with trees and green space throughout
 The rooms are Nordic-style detached houses, so guests do not disturb one another.
 
 ## Other Services
-Laundry: <<TODO: whether laundry service is available>>
+Laundry: the resort has no laundry service.
 Luggage storage: the resort does not offer luggage storage, either before check-in or after check-out.
-Transfers: <<TODO: whether the resort offers a pick-up or transfer service>>
-Front desk: <<TODO: whether there is a reception counter, its hours, and how to make contact outside those hours>>
+Transfers: the resort does not offer a pick-up or transfer service.
+Front desk: there is a reception counter, open 08:00-22:00; outside these hours call 081-598-1199.
 
 ## Not Available at the Resort
 As a small property, the resort does not have the following:
